@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客服消息 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container admin-shell">
+    <div th:replace="~{fragments/layout :: adminNav}"></div>
+    <section class="panel">
+        <div class="section-title compact">
+            <h2>客服消息</h2>
+            <span class="badge" th:if="${serviceUnreadCount > 0}" th:text="'未读 ' + ${serviceUnreadCount}">未读</span>
+        </div>
+        <div class="message-list" th:if="${!#lists.isEmpty(messages)}">
+            <article th:each="message : ${messages}" th:classappend="${message.adminUnread} ? 'is-unread' : ''">
+                <div class="message-head">
+                    <strong th:text="${message.senderRole == 'ADMIN'} ? '管理员回复' : '用户留言'">类型</strong>
+                    <span class="badge" th:if="${message.adminUnread}">未读</span>
+                </div>
+                <p th:text="${message.message}">内容</p>
+                <p class="muted">
+                    用户ID <span th:text="${message.userId}">1</span>
+                    <span th:if="${message.orderId != null}"> · 订单ID <span th:text="${message.orderId}">1</span></span>
+                    · <span th:text="${#temporals.format(message.createdAt, 'yyyy-MM-dd HH:mm')}">时间</span>
+                </p>
+                <form class="contact-box" th:action="@{/admin/service/reply}" method="post">
+                    <input type="hidden" name="userId" th:value="${message.userId}">
+                    <input type="hidden" name="orderId" th:if="${message.orderId != null}" th:value="${message.orderId}">
+                    <textarea name="message" placeholder="回复用户"></textarea>
+                    <button type="submit">回复</button>
+                    <a class="button ghost" th:if="${message.orderId != null}" th:href="@{/admin/orders/{id}(id=${message.orderId})}">查看订单</a>
+                </form>
+            </article>
+        </div>
+        <div class="panel muted" th:if="${#lists.isEmpty(messages)}">暂无客服消息。</div>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

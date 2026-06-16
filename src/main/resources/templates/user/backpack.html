@@ -1,0 +1,87 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>背包 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container reward-dashboard">
+    <header class="page-hero gradient-amber">
+        <div>
+            <span class="eyebrow">我的背包</span>
+            <h1>金币 · 优惠券 · 兑换码</h1>
+            <p class="muted">这里保存你已经拥有但还没使用的优惠券，过期、已用和有效状态都会区分显示。</p>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat"><span>当前金币</span><strong th:text="${profile.coins}">0</strong></div>
+            <div class="hero-stat"><span>总优惠券</span><strong th:text="${#lists.size(coupons)}">0</strong></div>
+            <div class="hero-stat"><span>可用优惠券</span><strong th:text="${activeCouponCount}">0</strong></div>
+            <div class="hero-stat"><span>签到</span><strong th:text="${profile.checkinStreak} + ' 天'">0 天</strong></div>
+        </div>
+    </header>
+
+    <section class="panel redeem-panel">
+        <div>
+            <h2>兑换码兑换</h2>
+            <p class="muted">输入管理员发布的兑换码，立即把对应奖励放入你的背包。</p>
+        </div>
+        <form th:action="@{/redeem}" method="post" class="inline-form">
+            <input th:replace="~{fragments/layout :: csrf}">
+            <input name="code" placeholder="例如 SUMMER2026" required maxlength="40">
+            <button type="submit" class="primary">立即兑换</button>
+        </form>
+    </section>
+
+    <section class="panel backpack-toolbar">
+        <div>
+            <h2>优惠券管理</h2>
+            <p class="muted">已使用和已过期的券可以清理，不再占用背包展示空间。</p>
+        </div>
+        <form th:action="@{/backpack/coupons/clear-inactive}" method="post" data-confirm="确定清理全部已使用和已过期优惠券？">
+            <button type="submit" class="ghost danger">一键清理不可用券</button>
+        </form>
+    </section>
+
+    <section class="inventory-grid">
+        <article class="inventory-card coupon-card"
+                 th:each="coupon : ${coupons}"
+                 th:classappend="${coupon.statusText == '已使用' or coupon.statusText == '已过期'} ? 'is-expired' : ''">
+            <div class="inventory-head">
+                <div class="inventory-meta">
+                    <div class="reward-chip-row">
+                        <span class="badge" th:text="${coupon.statusText}">状态</span>
+                        <span class="badge" th:text="${coupon.sourceLabel}">来源</span>
+                    </div>
+                    <h3 th:text="${coupon.displayName}">优惠券</h3>
+                    <p class="muted" th:text="${coupon.ruleText}">规则</p>
+                    <p class="muted" th:text="${'剩余数量：' + coupon.usableQuantity}">剩余数量：1</p>
+                </div>
+            </div>
+            <div class="reward-divider"></div>
+            <p class="muted" th:text="${coupon.expiresAt != null ? '到期时间：' + #temporals.format(coupon.expiresAt, 'yyyy-MM-dd HH:mm') : '永久有效'}">有效期</p>
+            <p class="muted" th:if="${coupon.usedAt != null}" th:text="${'使用时间：' + #temporals.format(coupon.usedAt, 'yyyy-MM-dd HH:mm')}">使用时间</p>
+            <p class="muted" th:if="${coupon.orderId != null}" th:text="${'关联订单：' + coupon.orderId}">订单</p>
+            <form class="coupon-clean-action"
+                  th:if="${coupon.statusText == '已使用' or coupon.statusText == '已过期'}"
+                  th:action="@{/backpack/coupons/{id}/delete(id=${coupon.id})}"
+                  method="post"
+                  data-confirm="确定删除这张不可用优惠券？">
+                <button type="submit" class="ghost danger">删除</button>
+            </form>
+        </article>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

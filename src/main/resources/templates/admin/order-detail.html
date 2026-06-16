@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单详情 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container admin-shell" th:if="${detail != null}">
+    <div th:replace="~{fragments/layout :: adminNav}"></div>
+    <section class="panel">
+        <h1>订单 <span th:text="${detail.order.orderNo}">订单号</span></h1>
+        <p>用户：<span th:text="${detail.order.username}">用户</span></p>
+        <p>地址：<span th:text="${detail.order.addressSnapshot}">地址</span></p>
+        <p>配送：<strong th:text="${detail.order.deliveryText}">预计送达</strong></p>
+        <form class="actions" th:action="@{/admin/orders/{id}/status(id=${detail.order.id})}" method="post">
+            <select name="status" style="width: 180px;">
+                <option value="PAID" th:selected="${detail.order.status == 'PAID'}">待发货</option>
+                <option value="SHIPPED" th:selected="${detail.order.status == 'SHIPPED'}">已发货</option>
+                <option value="COMPLETED" th:selected="${detail.order.status == 'COMPLETED'}">已送达</option>
+                <option value="REFUND_REQUESTED" th:selected="${detail.order.status == 'REFUND_REQUESTED'}">退款处理中</option>
+                <option value="REFUNDED" th:selected="${detail.order.status == 'REFUNDED'}">已退款</option>
+                <option value="CANCELLED" th:selected="${detail.order.status == 'CANCELLED'}">已取消</option>
+            </select>
+            <button type="submit">更新状态</button>
+        </form>
+        <table class="table">
+            <thead><tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th></tr></thead>
+            <tbody>
+            <tr th:each="item : ${detail.items}">
+                <td class="cart-product"><img th:src="${item.coverUrl}" th:alt="${item.productName}"><span th:text="${item.productName}">商品</span></td>
+                <td th:text="'¥' + ${item.unitPrice}">¥0</td>
+                <td th:text="${item.quantity}">1</td>
+                <td th:text="'¥' + ${item.subtotal}">¥0</td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="panel discount-summary">
+            <strong>买家优惠信息</strong>
+            <p class="muted" th:text="${detail.order.discountText}">未使用优惠</p>
+            <p>订单原价 <span th:text="'¥' + (${detail.order.originalAmount} ?: ${detail.order.totalAmount})">¥0</span>，实付 <span class="price" th:text="'¥' + ${detail.order.totalAmount}">¥0</span></p>
+        </div>
+        <div class="message-list" th:if="${messages != null and !#lists.isEmpty(messages)}">
+            <h2>客服沟通</h2>
+            <article class="chat-message" th:each="message : ${messages}" th:classappend="${message.senderRole == 'ADMIN'} ? 'from-admin' : 'from-user'">
+                <strong th:text="${message.senderRole == 'ADMIN'} ? '管理员回复' : '用户留言'">角色</strong>
+                <p th:text="${message.message}">留言内容</p>
+                <span class="muted" th:text="${#temporals.format(message.createdAt, 'yyyy-MM-dd HH:mm')}">时间</span>
+            </article>
+        </div>
+        <form class="contact-box" th:action="@{/admin/service/{orderId}/reply(orderId=${detail.order.id})}" method="post">
+            <input type="hidden" name="userId" th:value="${detail.order.userId}">
+            <label>回复用户</label>
+            <textarea name="message" placeholder="输入回复内容，用户会在客服和订单详情中看到。"></textarea>
+            <button type="submit">发送回复</button>
+        </form>
+        <div class="summary-bar">
+            <strong>总额 <span class="price" th:text="'¥' + ${detail.order.totalAmount}">¥0</span></strong>
+            <a class="button ghost" th:href="@{/admin/orders}">返回订单</a>
+        </div>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

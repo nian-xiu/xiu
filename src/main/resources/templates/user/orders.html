@@ -1,0 +1,52 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的订单 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container">
+    <div class="section-title">
+        <h2>我的订单</h2>
+        <a class="muted" th:href="@{/products}">继续购物</a>
+    </div>
+    <div class="order-card-list" th:if="${!#lists.isEmpty(orders)}">
+        <article class="order-card" th:each="order : ${orders}">
+            <div class="order-card-head">
+                <div>
+                    <strong th:text="${order.orderNo}">订单号</strong>
+                    <p class="muted" th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">下单时间</p>
+                </div>
+                <span class="badge" th:text="${order.statusLabel}">状态</span>
+                <span class="badge" th:text="${order.deliveryText}">配送</span>
+            </div>
+            <div class="order-progress">
+                <span th:classappend="${order.status == 'PAID' or order.status == 'SHIPPED' or order.status == 'COMPLETED'} ? 'is-active' : ''">已支付</span>
+                <span th:classappend="${order.status == 'SHIPPED' or order.status == 'COMPLETED'} ? 'is-active' : ''">运输中</span>
+                <span th:classappend="${order.status == 'COMPLETED'} ? 'is-active' : ''">已完成</span>
+            </div>
+            <div class="summary-bar">
+                <div>
+                    <span class="muted" th:text="${order.deliveryText}">预计送达</span>
+                    <strong class="price" th:text="'¥' + ${order.totalAmount}">¥0</strong>
+                </div>
+                <a class="button" th:href="@{/orders/{id}(id=${order.id})}">查看订单状态</a>
+            </div>
+        </article>
+    </div>
+    <div class="panel" th:if="${#lists.isEmpty(orders)}">还没有订单，去挑几件喜欢的商品吧。</div>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="心怡商城">
+  <rect width="64" height="64" rx="14" fill="#102923"/>
+  <path d="M18 27h28l-3 25H21L18 27Z" fill="#f8fbf8"/>
+  <path d="M24 27c0-8 4.8-13 12-13s12 5 12 13" fill="none" stroke="#70c9ad" stroke-width="5" stroke-linecap="round"/>
+  <path d="M20 18 44 48M44 18 20 48" stroke="#e96f45" stroke-width="6" stroke-linecap="round"/>
+  <path d="M20 18 44 48M44 18 20 48" stroke="#fff7e6" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

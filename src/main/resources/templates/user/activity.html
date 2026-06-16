@@ -1,0 +1,72 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container reward-dashboard">
+    <header class="page-hero gradient-purple">
+        <div>
+            <span class="eyebrow">活动中心</span>
+            <h1>限时活动 · 福利领不停</h1>
+            <p class="muted">这里展示管理员发布的公开活动，金币和优惠券都可以直接领取，部分活动支持限时秒杀倒计时。</p>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat"><span>当前金币</span><strong th:text="${profile.coins}">0</strong></div>
+            <div class="hero-stat"><span>活动总数</span><strong th:text="${#lists.size(activities)}">0</strong></div>
+            <div class="hero-stat"><span>金币规则</span><strong>100 = 1 元</strong></div>
+            <div class="hero-stat"><span>签到</span><strong th:text="${profile.checkinStreak} + ' 天'">0 天</strong></div>
+        </div>
+    </header>
+
+    <section class="reward-grid">
+        <article class="reward-card"
+                 th:each="activity : ${activities}"
+                 th:classappend="${activity.flashSaleEnabled} ? 'is-flash' : (${activity.claimedByUser} ? 'is-claimed' : '')"
+                 th:attr="data-countdown=${activity.flashSaleEnabled and activity.countdownEpochMillis != null ? activity.countdownEpochMillis : null}">
+            <div class="reward-card-head">
+                <div class="reward-meta">
+                    <div class="reward-chip-row">
+                        <span class="badge" th:text="${activity.statusLabel}">状态</span>
+                        <span class="badge" th:text="${activity.rewardLabel}">奖励</span>
+                        <span class="badge badge-flash" th:if="${activity.flashSaleEnabled}">限时秒杀</span>
+                    </div>
+                    <h3 th:text="${activity.title}">活动标题</h3>
+                    <p class="muted" th:text="${activity.description}">活动说明</p>
+                </div>
+                <span class="badge" th:text="${activity.quotaLabel}">名额</span>
+            </div>
+            <div class="reward-divider"></div>
+            <p class="muted" th:text="${activity.windowLabel}">时间窗口</p>
+            <div class="countdown" th:if="${activity.flashSaleEnabled and activity.countdownEpochMillis != null}" data-countdown-display>
+                <span class="countdown-cell"><strong data-d>--</strong><em>天</em></span>
+                <span class="countdown-cell"><strong data-h>--</strong><em>时</em></span>
+                <span class="countdown-cell"><strong data-m>--</strong><em>分</em></span>
+                <span class="countdown-cell"><strong data-s>--</strong><em>秒</em></span>
+            </div>
+            <p class="muted" th:unless="${activity.flashSaleEnabled}" th:text="${activity.remainingTimeLabel}">剩余时间</p>
+            <div class="reward-actions">
+                <form th:if="${activity.claimableNow}" th:action="@{/activity/{id}/claim(id=${activity.id})}" method="post">
+                    <input th:replace="~{fragments/layout :: csrf}">
+                    <button type="submit" class="primary">立即领取</button>
+                </form>
+                <button class="ghost" type="button" th:disabled="${!activity.claimableNow}">查看奖励</button>
+            </div>
+        </article>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

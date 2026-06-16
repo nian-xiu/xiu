@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ssmshop.mapper.CartMapper">
+    <select id="findByUserAndProduct" resultType="CartItem">
+        SELECT * FROM cart_items WHERE user_id = #{userId} AND product_id = #{productId}
+    </select>
+
+    <select id="findByUserId" resultType="CartItem">
+        SELECT * FROM cart_items WHERE user_id = #{userId} ORDER BY updated_at DESC
+    </select>
+
+    <insert id="insert" parameterType="CartItem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO cart_items (user_id, product_id, quantity)
+        VALUES (#{userId}, #{productId}, #{quantity})
+    </insert>
+
+    <update id="updateQuantity">
+        UPDATE cart_items SET quantity = #{quantity} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteByIdAndUserId">
+        DELETE FROM cart_items WHERE id = #{id} AND user_id = #{userId}
+    </delete>
+
+    <delete id="clearByUserId">
+        DELETE FROM cart_items WHERE user_id = #{userId}
+    </delete>
+</mapper>

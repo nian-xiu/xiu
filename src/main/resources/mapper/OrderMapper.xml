@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ssmshop.mapper.OrderMapper">
+    <insert id="insert" parameterType="Order" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO orders (order_no, user_id, address_snapshot, original_amount, total_amount, coin_used, coin_discount, coupon_id, coupon_discount, status, payment_method, remark, estimated_delivery_days, auto_ship_at, paid_at)
+        VALUES (#{orderNo}, #{userId}, #{addressSnapshot}, #{originalAmount}, #{totalAmount}, #{coinUsed}, #{coinDiscount}, #{couponId}, #{couponDiscount}, #{status}, #{paymentMethod}, #{remark}, #{estimatedDeliveryDays}, #{autoShipAt}, #{paidAt})
+    </insert>
+
+    <select id="findById" resultType="Order">
+        SELECT o.*, u.username AS username
+        FROM orders o
+        JOIN users u ON u.id = o.user_id
+        WHERE o.id = #{id}
+    </select>
+
+    <select id="findByIdAndUserId" resultType="Order">
+        SELECT o.*, u.username AS username
+        FROM orders o
+        JOIN users u ON u.id = o.user_id
+        WHERE o.id = #{id} AND o.user_id = #{userId}
+    </select>
+
+    <select id="findByUserId" resultType="Order">
+        SELECT o.*, u.username AS username
+        FROM orders o
+        JOIN users u ON u.id = o.user_id
+        WHERE o.user_id = #{userId}
+        ORDER BY o.created_at DESC
+    </select>
+
+    <select id="findAll" resultType="Order">
+        SELECT o.*, u.username AS username
+        FROM orders o
+        JOIN users u ON u.id = o.user_id
+        <where>
+            <if test="status != null and status != ''">
+                AND o.status = #{status}
+            </if>
+        </where>
+        ORDER BY o.created_at DESC
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM orders
+    </select>
+
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*) FROM orders WHERE status = #{status}
+    </select>
+
+    <select id="sumRevenue" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status IN ('PAID', 'SHIPPED', 'COMPLETED')
+    </select>
+
+    <select id="findPendingAutoShip" resultType="Order">
+        SELECT o.*, u.username AS username
+        FROM orders o
+        JOIN users u ON u.id = o.user_id
+        WHERE o.status = 'PAID'
+          AND o.shipped_at IS NULL
+          AND o.auto_ship_at IS NOT NULL
+          AND o.auto_ship_at &lt;= CURRENT_TIMESTAMP
+        ORDER BY o.auto_ship_at ASC
+    </select>
+
+    <update id="updateStatus">
+        UPDATE orders
+        SET status = #{status},
+            paid_at = CASE WHEN #{status} = 'PAID' THEN COALESCE(paid_at, CURRENT_TIMESTAMP) ELSE paid_at END,
+            shipped_at = CASE WHEN #{status} = 'SHIPPED' THEN COALESCE(shipped_at, CURRENT_TIMESTAMP) ELSE shipped_at END,
+            completed_at = CASE WHEN #{status} = 'COMPLETED' THEN COALESCE(completed_at, CURRENT_TIMESTAMP) ELSE completed_at END
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateStatusByUserId">
+        UPDATE orders
+        SET status = #{status},
+            completed_at = CASE WHEN #{status} = 'COMPLETED' THEN COALESCE(completed_at, CURRENT_TIMESTAMP) ELSE completed_at END
+        WHERE id = #{id} AND user_id = #{userId}
+    </update>
+</mapper>

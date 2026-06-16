@@ -1,0 +1,58 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客服 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container service-layout">
+    <section class="panel">
+        <div class="section-title compact">
+            <h2>联系客服</h2>
+            <a class="muted" th:href="@{/orders}">我的订单</a>
+        </div>
+        <form class="form-grid" th:action="@{/service/messages}" method="post">
+            <div class="field full">
+                <label>关联订单</label>
+                <select name="orderId">
+                    <option value="">不关联订单</option>
+                    <option th:each="order : ${orders}" th:value="${order.id}" th:text="${order.orderNo + ' · ' + order.statusLabel}">订单</option>
+                </select>
+            </div>
+            <div class="field full">
+                <label>留言内容</label>
+                <textarea name="message" placeholder="请输入要咨询的问题，例如物流、退款或商品问题。"></textarea>
+            </div>
+            <button type="submit">发送给客服</button>
+        </form>
+    </section>
+
+    <section class="panel">
+        <div class="section-title compact">
+            <h2>沟通记录</h2>
+        </div>
+        <div class="chat-list" th:if="${!#lists.isEmpty(messages)}">
+            <article class="chat-message" th:each="message : ${messages}" th:classappend="${message.senderRole == 'ADMIN'} ? 'from-admin' : 'from-user'">
+                <strong th:text="${message.senderRole == 'ADMIN'} ? '客服回复' : '我的留言'">角色</strong>
+                <p th:text="${message.message}">消息内容</p>
+                <span class="muted" th:text="${#temporals.format(message.createdAt, 'yyyy-MM-dd HH:mm')}">时间</span>
+                <a class="muted" th:if="${message.orderId != null}" th:href="@{/orders/{id}(id=${message.orderId})}" th:text="'订单 #' + ${message.orderId}">订单</a>
+            </article>
+        </div>
+        <div class="panel muted" th:if="${#lists.isEmpty(messages)}">暂无客服沟通记录。</div>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

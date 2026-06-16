@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${product.name} + ' - 心怡商城'">商品详情</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container" th:if="${product != null}">
+    <div class="detail-layout">
+        <div class="detail-image-wrap">
+            <img class="detail-image" data-image-zoom th:src="${product.coverUrl}" th:alt="${product.name}">
+        </div>
+        <section class="panel">
+            <div class="product-card-top">
+                <span class="badge" th:text="${product.categoryName}">分类</span>
+                <span class="stock-pill" th:text="${product.stock > 30 ? '库存充足' : '库存紧张'}">库存</span>
+            </div>
+            <h1 th:text="${product.name}">商品名称</h1>
+            <p class="muted" th:text="${product.subtitle}">副标题</p>
+            <p>
+                <span class="price" th:text="'¥' + ${product.price}">¥0</span>
+                <span class="strike" th:if="${product.originalPrice != null}" th:text="'¥' + ${product.originalPrice}">¥0</span>
+            </p>
+            <p class="muted">库存 <span th:text="${product.stock}">0</span> · 销量 <span th:text="${product.sales}">0</span> · 评分 <span th:text="${product.rating}">5.0</span></p>
+            <p th:text="${product.description}">描述</p>
+            <div class="service-promise">
+                <span>正品保障</span>
+                <span>优惠可叠加预览</span>
+                <span>订单状态可追踪</span>
+                <span>客服消息闭环</span>
+            </div>
+            <div class="detail-actions">
+                <form th:if="${product.status == 'ON_SALE' and product.stock > 0}"
+                      th:action="@{/cart/add}" method="post" class="actions" data-purchase-quantity-source>
+                    <input type="hidden" name="productId" th:value="${product.id}">
+                    <input type="number" name="quantity" min="1" th:max="${product.stock}" value="1" style="width: 96px;" data-purchase-quantity>
+                    <button type="submit">加入购物车</button>
+                </form>
+                <form th:if="${currentUser != null and product.status == 'ON_SALE' and product.stock > 0}"
+                      th:action="@{/checkout/buy-now}" method="get" class="actions">
+                    <input type="hidden" name="productId" th:value="${product.id}">
+                    <input type="hidden" name="quantity" value="1" data-buy-now-quantity>
+                    <button class="secondary" type="submit">立即购买</button>
+                </form>
+                <a class="button secondary" th:if="${currentUser == null and product.status == 'ON_SALE' and product.stock > 0}" th:href="@{/login}">登录后购买</a>
+                <span class="badge" th:if="${product.status != 'ON_SALE' or product.stock <= 0}">暂不可购买</span>
+                <form th:if="${currentUser != null}" th:action="@{/favorites/toggle}" method="post">
+                    <input type="hidden" name="productId" th:value="${product.id}">
+                <button class="ghost" type="submit" th:text="${favorited} ? '取消收藏商品' : '收藏商品'">收藏商品</button>
+                </form>
+                <form th:if="${currentUser != null}" th:action="@{/blacklist/add}" method="post">
+                    <input type="hidden" name="productId" th:value="${product.id}">
+                    <input type="hidden" name="redirect" th:value="@{/products}">
+                    <button class="ghost" type="submit">加入黑名单</button>
+                </form>
+                <a class="button ghost" th:if="${currentUser == null}" th:href="@{/login}">登录后收藏商品</a>
+            </div>
+        </section>
+    </div>
+</main>
+<main class="container" th:if="${product == null}">
+    <div class="panel">商品不存在或已被删除。</div>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ssmshop.mapper.UserCouponMapper">
+    <insert id="insert" parameterType="UserCoupon" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_coupons
+        (user_id, coupon_type, coupon_name, discount_rate, threshold_amount, reduce_amount, expires_at, source_type, source_ref_id, status, quantity)
+        VALUES
+        (#{userId}, #{couponType}, #{couponName}, #{discountRate}, #{thresholdAmount}, #{reduceAmount}, #{expiresAt}, #{sourceType}, #{sourceRefId}, #{status}, #{quantity})
+    </insert>
+
+    <select id="findUnusedByUserId" resultType="UserCoupon">
+        SELECT * FROM user_coupons
+        WHERE user_id = #{userId} AND status = 'UNUSED'
+          AND quantity &gt; 0
+          AND (expires_at IS NULL OR expires_at &gt; CURRENT_TIMESTAMP)
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findByUserId" resultType="UserCoupon">
+        SELECT * FROM user_coupons
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findUnusedByIdAndUserId" resultType="UserCoupon">
+        SELECT * FROM user_coupons
+        WHERE id = #{id} AND user_id = #{userId} AND status = 'UNUSED'
+          AND quantity &gt; 0
+          AND (expires_at IS NULL OR expires_at &gt; CURRENT_TIMESTAMP)
+    </select>
+
+    <update id="markUsed">
+        UPDATE user_coupons
+        SET quantity = quantity - 1,
+            status = CASE WHEN quantity - 1 &lt;= 0 THEN 'USED' ELSE status END,
+            used_at = CASE WHEN quantity - 1 &lt;= 0 THEN CURRENT_TIMESTAMP ELSE used_at END,
+            order_id = CASE WHEN quantity - 1 &lt;= 0 THEN #{orderId} ELSE order_id END
+        WHERE id = #{id} AND user_id = #{userId} AND status = 'UNUSED'
+          AND quantity &gt; 0
+          AND (expires_at IS NULL OR expires_at &gt; CURRENT_TIMESTAMP)
+    </update>
+
+    <delete id="deleteInactiveByIdAndUserId">
+        DELETE FROM user_coupons
+        WHERE id = #{id} AND user_id = #{userId}
+          AND (status = 'USED' OR (expires_at IS NOT NULL AND expires_at &lt;= CURRENT_TIMESTAMP))
+    </delete>
+
+    <delete id="deleteInactiveByUserId">
+        DELETE FROM user_coupons
+        WHERE user_id = #{userId}
+          AND (status = 'USED' OR (expires_at IS NOT NULL AND expires_at &lt;= CURRENT_TIMESTAMP))
+    </delete>
+</mapper>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ssmshop.mapper.ProductMapper">
+    <sql id="productColumns">
+        p.*, c.name AS category_name
+    </sql>
+
+    <select id="search" parameterType="com.example.ssmshop.dto.ProductFilter" resultType="Product">
+        SELECT <include refid="productColumns"/>
+        FROM products p
+        JOIN categories c ON c.id = p.category_id
+        <where>
+            <if test="userId != null and includeBlacklisted != true">
+                AND NOT EXISTS (
+                    SELECT 1 FROM product_blacklist pb
+                    WHERE pb.product_id = p.id AND pb.user_id = #{userId}
+                )
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND (p.name LIKE CONCAT('%', #{keyword}, '%') OR p.subtitle LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="categoryId != null">
+                AND p.category_id = #{categoryId}
+            </if>
+            <if test="status != null and status != ''">
+                AND p.status = #{status}
+            </if>
+            <if test="minPrice != null">
+                AND p.price &gt;= #{minPrice}
+            </if>
+            <if test="maxPrice != null">
+                AND p.price &lt;= #{maxPrice}
+            </if>
+        </where>
+        <choose>
+            <when test="sort == 'priceAsc'">ORDER BY p.price ASC</when>
+            <when test="sort == 'priceDesc'">ORDER BY p.price DESC</when>
+            <when test="sort == 'sales'">ORDER BY p.sales DESC</when>
+            <when test="sort == 'rating'">ORDER BY p.rating DESC</when>
+            <when test="sort == 'newest'">ORDER BY p.created_at DESC</when>
+            <when test="sort == 'stockAsc'">ORDER BY p.stock ASC</when>
+            <otherwise>ORDER BY p.featured DESC, p.created_at DESC</otherwise>
+        </choose>
+    </select>
+
+    <select id="findFeatured" resultType="Product">
+        SELECT <include refid="productColumns"/>
+        FROM products p
+        JOIN categories c ON c.id = p.category_id
+        WHERE p.featured = TRUE AND p.status = 'ON_SALE'
+        <if test="userId != null">
+            AND NOT EXISTS (
+                SELECT 1 FROM product_blacklist pb
+                WHERE pb.product_id = p.id AND pb.user_id = #{userId}
+            )
+        </if>
+        ORDER BY p.sales DESC, p.id ASC
+        LIMIT 8
+    </select>
+
+    <select id="findLatest" resultType="Product">
+        SELECT <include refid="productColumns"/>
+        FROM products p
+        JOIN categories c ON c.id = p.category_id
+        WHERE p.status = 'ON_SALE'
+        <if test="userId != null">
+            AND NOT EXISTS (
+                SELECT 1 FROM product_blacklist pb
+                WHERE pb.product_id = p.id AND pb.user_id = #{userId}
+            )
+        </if>
+        ORDER BY p.created_at DESC
+        LIMIT #{limit}
+    </select>
+
+    <select id="findById" resultType="Product">
+        SELECT <include refid="productColumns"/>
+        FROM products p
+        JOIN categories c ON c.id = p.category_id
+        WHERE p.id = #{id}
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM products
+    </select>
+
+    <select id="countByStatus" resultType="long">
+        SELECT COUNT(*) FROM products WHERE status = #{status}
+    </select>
+
+    <select id="countLowStock" resultType="long">
+        SELECT COUNT(*) FROM products WHERE status = 'ON_SALE' AND stock &lt;= #{threshold}
+    </select>
+
+    <insert id="insert" parameterType="Product" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO products (category_id, name, subtitle, description, price, original_price, stock, cover_url, status, featured)
+        VALUES (#{categoryId}, #{name}, #{subtitle}, #{description}, #{price}, #{originalPrice}, #{stock}, #{coverUrl}, #{status}, #{featured})
+    </insert>
+
+    <update id="update" parameterType="Product">
+        UPDATE products
+        SET category_id = #{categoryId},
+            name = #{name},
+            subtitle = #{subtitle},
+            description = #{description},
+            price = #{price},
+            original_price = #{originalPrice},
+            stock = #{stock},
+            cover_url = #{coverUrl},
+            status = #{status},
+            featured = #{featured}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM products WHERE id = #{id}
+    </delete>
+
+    <update id="decreaseStock">
+        UPDATE products
+        SET stock = stock - #{quantity}
+        WHERE id = #{productId} AND stock &gt;= #{quantity}
+    </update>
+
+    <update id="increaseSales">
+        UPDATE products
+        SET sales = sales + #{quantity}
+        WHERE id = #{productId}
+    </update>
+</mapper>

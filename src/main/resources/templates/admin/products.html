@@ -1,0 +1,80 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品管理 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<main class="container admin-shell">
+    <div th:replace="~{fragments/layout :: adminNav}"></div>
+    <section>
+        <div class="section-title">
+            <h2>商品管理</h2>
+            <a class="button" th:href="@{/admin/products/new}">新增商品</a>
+        </div>
+        <form class="filter-bar" th:action="@{/admin/products}" method="get">
+            <div class="field"><label>关键词</label><input name="keyword" th:value="${filter.keyword}"></div>
+            <div class="field">
+                <label>分类</label>
+                <select name="categoryId">
+                    <option value="">全部</option>
+                    <option th:each="category : ${categories}" th:value="${category.id}" th:selected="${filter.categoryId == category.id}" th:text="${category.name}">分类</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>排序</label>
+                <select name="sort">
+                    <option value="">默认</option>
+                    <option value="sales" th:selected="${filter.sort == 'sales'}">销量</option>
+                    <option value="stockAsc" th:selected="${filter.sort == 'stockAsc'}">库存预警</option>
+                    <option value="newest" th:selected="${filter.sort == 'newest'}">新近上架</option>
+                    <option value="priceDesc" th:selected="${filter.sort == 'priceDesc'}">高价</option>
+                    <option value="priceAsc" th:selected="${filter.sort == 'priceAsc'}">低价</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>状态</label>
+                <select name="status">
+                    <option value="">全部</option>
+                    <option value="ON_SALE" th:selected="${filter.status == 'ON_SALE'}">在售</option>
+                    <option value="OFF_SALE" th:selected="${filter.status == 'OFF_SALE'}">下架</option>
+                </select>
+            </div>
+            <div class="field"><label>最低价</label><input type="number" name="minPrice" th:value="${filter.minPrice}"></div>
+            <div class="field"><label>最高价</label><input type="number" name="maxPrice" th:value="${filter.maxPrice}"></div>
+            <button type="submit">筛选</button>
+        </form>
+        <table class="table">
+            <thead><tr><th>商品</th><th>分类</th><th>价格</th><th>库存</th><th>销量</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+            <tr th:each="product : ${products}">
+                <td class="cart-product"><img th:src="${product.coverUrl}" th:alt="${product.name}"><span th:text="${product.name}">商品</span></td>
+                <td th:text="${product.categoryName}">分类</td>
+                <td th:text="'¥' + ${product.price}">¥0</td>
+                <td th:text="${product.stock}">0</td>
+                <td th:text="${product.sales}">0</td>
+                <td><span class="badge" th:text="${product.status}">状态</span></td>
+                <td class="actions">
+                    <a class="button ghost" th:href="@{/admin/products/{id}/edit(id=${product.id})}">编辑</a>
+                    <form th:action="@{/admin/products/{id}/delete(id=${product.id})}" method="post" data-confirm="确定删除该商品？如果商品存在订单记录，数据库会拒绝删除。">
+                        <button class="danger" type="submit">删除</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

@@ -1,0 +1,98 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单详情 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260524a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container" th:if="${detail != null}">
+    <section class="panel order-detail-panel">
+        <div class="order-head">
+            <div>
+                <h1>订单 <span th:text="${detail.order.orderNo}">订单号</span></h1>
+                <p class="muted" th:text="${detail.order.addressSnapshot}">收货地址</p>
+            </div>
+            <div class="delivery-card">
+                <span class="badge" th:text="${detail.order.statusLabel}">状态</span>
+                <strong th:text="${detail.order.deliveryText}">预计送达</strong>
+                <div class="delivery-meter" th:classappend="${detail.order.remainingDeliveryDays == 0} ? 'is-done' : ''">
+                    <span th:style="'width:' + ${100 - (detail.order.remainingDeliveryDays > 5 ? 5 : detail.order.remainingDeliveryDays) * 20} + '%'"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="order-progress detail">
+            <span th:classappend="${detail.order.status == 'PAID' or detail.order.status == 'SHIPPED' or detail.order.status == 'COMPLETED'} ? 'is-active' : ''">已支付</span>
+            <span th:classappend="${detail.order.status == 'SHIPPED' or detail.order.status == 'COMPLETED'} ? 'is-active' : ''">运输中</span>
+            <span th:classappend="${detail.order.status == 'COMPLETED'} ? 'is-active' : ''">已完成</span>
+        </div>
+
+        <table class="table">
+            <tbody>
+            <tr th:each="item : ${detail.items}">
+                <td class="cart-product">
+                    <img class="order-thumb" th:src="${item.coverUrl}" th:alt="${item.productName}">
+                    <span th:text="${item.productName}">商品</span>
+                </td>
+                <td th:text="'¥' + ${item.unitPrice}">¥0</td>
+                <td th:text="'x ' + ${item.quantity}">x1</td>
+                <td th:text="'¥' + ${item.subtotal}">¥0</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="panel discount-summary">
+            <strong>优惠信息</strong>
+            <p class="muted" th:text="${detail.order.discountText}">未使用优惠</p>
+            <p>支付方式 <span th:text="${detail.order.paymentMethodLabel}">在线支付</span></p>
+            <p>原价 <span th:text="'¥' + (${detail.order.originalAmount} ?: ${detail.order.totalAmount})">¥0</span>，实付 <span class="price" th:text="'¥' + ${detail.order.totalAmount}">¥0</span></p>
+        </div>
+
+        <div class="order-actions">
+            <form th:action="@{/orders/{id}/refund(id=${detail.order.id})}" method="post" th:if="${detail.order.refundable}">
+                <button class="ghost" type="submit">申请退款</button>
+            </form>
+            <form th:action="@{/orders/{id}/receive(id=${detail.order.id})}" method="post">
+                <button class="secondary" type="submit" th:disabled="${!detail.order.receivable}">确认收货</button>
+            </form>
+            <button class="button ghost" type="button" data-contact-toggle>联系客服</button>
+        </div>
+
+        <form class="contact-box" th:action="@{/orders/{id}/contact(id=${detail.order.id})}" method="post" data-contact-box hidden>
+            <label>给客服留言</label>
+            <textarea name="message" placeholder="例如：想修改配送时间、咨询退款进度等"></textarea>
+            <button type="submit">发送留言</button>
+        </form>
+
+        <div class="message-list" th:if="${messages != null and !#lists.isEmpty(messages)}">
+            <h2>客服沟通记录</h2>
+            <article class="chat-message" th:each="message : ${messages}" th:classappend="${message.senderRole == 'ADMIN'} ? 'from-admin' : 'from-user'">
+                <strong th:text="${message.senderRole == 'ADMIN'} ? '客服回复' : '我的留言'">角色</strong>
+                <p th:text="${message.message}">留言内容</p>
+                <span class="muted" th:text="${#temporals.format(message.createdAt, 'yyyy-MM-dd HH:mm')}">时间</span>
+            </article>
+        </div>
+
+        <div class="summary-bar">
+            <strong>订单金额 <span class="price" th:text="'¥' + ${detail.order.totalAmount}">¥0</span></strong>
+            <a class="button ghost" th:href="@{/orders}">返回我的订单</a>
+        </div>
+    </section>
+</main>
+<main class="container" th:if="${detail == null}">
+    <div class="panel">订单不存在。</div>
+</main>
+<script th:src="@{/js/app.js(v='20260524a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

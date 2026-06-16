@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ssmshop.mapper.CouponCodeMapper">
+    <insert id="insert" parameterType="CouponCode" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO coupon_codes
+        (code, title, reward_type, coin_amount, coupon_type, coupon_name, discount_rate,
+         threshold_amount, reduce_amount, coupon_expiry_days, coupon_quantity, expires_at,
+         total_quota, redeemed_count, status, created_by)
+        VALUES
+        (#{code}, #{title}, #{rewardType}, #{coinAmount}, #{couponType}, #{couponName}, #{discountRate},
+         #{thresholdAmount}, #{reduceAmount}, #{couponExpiryDays}, #{couponQuantity}, #{expiresAt},
+         #{totalQuota}, #{redeemedCount}, #{status}, #{createdBy})
+    </insert>
+
+    <select id="findByCode" resultType="CouponCode">
+        SELECT * FROM coupon_codes WHERE code = #{code}
+    </select>
+
+    <select id="findAll" resultType="CouponCode">
+        SELECT * FROM coupon_codes ORDER BY created_at DESC
+    </select>
+
+    <update id="increaseRedeemedCount">
+        UPDATE coupon_codes
+        SET redeemed_count = redeemed_count + 1
+        WHERE id = #{id}
+          AND status = 'ACTIVE'
+          AND (expires_at IS NULL OR expires_at &gt; CURRENT_TIMESTAMP)
+          AND (total_quota = 0 OR redeemed_count &lt; total_quota)
+    </update>
+
+    <update id="updateStatus">
+        UPDATE coupon_codes SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM coupon_codes WHERE id = #{id}
+    </delete>
+
+    <select id="existsRedemption" resultType="int">
+        SELECT COUNT(*) FROM coupon_code_redemptions WHERE code_id = #{codeId} AND user_id = #{userId}
+    </select>
+
+    <insert id="insertRedemption">
+        INSERT INTO coupon_code_redemptions (code_id, user_id) VALUES (#{codeId}, #{userId})
+    </insert>
+</mapper>

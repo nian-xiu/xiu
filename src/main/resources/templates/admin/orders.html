@@ -1,0 +1,55 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单管理 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<main class="container admin-shell">
+    <div th:replace="~{fragments/layout :: adminNav}"></div>
+    <section>
+        <div class="section-title">
+            <h2>订单管理</h2>
+            <form th:action="@{/admin/orders}" method="get" class="actions">
+                <select name="status" style="width: 160px;">
+                    <option value="">全部状态</option>
+                    <option value="PAID" th:selected="${status == 'PAID'}">已支付</option>
+                    <option value="SHIPPED" th:selected="${status == 'SHIPPED'}">已发货</option>
+                    <option value="COMPLETED" th:selected="${status == 'COMPLETED'}">已完成</option>
+                    <option value="CANCELLED" th:selected="${status == 'CANCELLED'}">已取消</option>
+                </select>
+                <button type="submit">筛选</button>
+            </form>
+        </div>
+        <table class="table">
+            <thead><tr><th>订单号</th><th>用户</th><th>金额</th><th>优惠</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+            <tbody>
+            <tr th:each="order : ${orders}">
+                <td th:text="${order.orderNo}">订单号</td>
+                <td th:text="${order.username}">用户</td>
+                <td th:text="'¥' + ${order.totalAmount}">¥0</td>
+                <td class="muted" th:text="${order.discountText}">优惠</td>
+                <td>
+                    <span class="badge" th:text="${order.statusLabel}">状态</span>
+                    <div class="muted" th:text="${order.deliveryText}">配送</div>
+                </td>
+                <td th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">时间</td>
+                <td><a class="button ghost" th:href="@{/admin/orders/{id}(id=${order.id})}">详情</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

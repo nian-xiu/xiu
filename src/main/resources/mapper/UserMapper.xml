@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ssmshop.mapper.UserMapper">
+    <select id="findById" resultType="User">
+        SELECT * FROM users WHERE id = #{id}
+    </select>
+
+    <select id="findByUsername" resultType="User">
+        SELECT * FROM users WHERE username = #{username}
+    </select>
+
+    <select id="findAll" resultType="User">
+        SELECT * FROM users ORDER BY created_at DESC
+    </select>
+
+    <select id="countCustomers" resultType="long">
+        SELECT COUNT(*) FROM users WHERE role = 'CUSTOMER'
+    </select>
+
+    <insert id="insert" parameterType="User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (username, password_hash, nickname, phone, email, role, status)
+        VALUES (#{username}, #{passwordHash}, #{nickname}, #{phone}, #{email}, #{role}, #{status})
+    </insert>
+
+    <update id="updateProfile" parameterType="User">
+        UPDATE users
+        SET username = #{username}, nickname = #{nickname}, phone = #{phone}, email = #{email}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updatePassword">
+        UPDATE users SET password_hash = #{passwordHash} WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE users SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <update id="updateCheckin">
+        UPDATE users
+        SET coins = coins + #{coins},
+            checkin_streak = #{checkinStreak},
+            last_checkin_date = CURRENT_DATE
+        WHERE id = #{id}
+    </update>
+
+    <update id="decreaseCoins">
+        UPDATE users
+        SET coins = coins - #{coins}
+        WHERE id = #{id} AND coins &gt;= #{coins}
+    </update>
+
+    <update id="increaseCoins">
+        UPDATE users
+        SET coins = coins + #{coins}
+        WHERE id = #{id}
+    </update>
+</mapper>

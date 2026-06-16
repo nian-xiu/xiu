@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ssmshop.mapper.ActivityCampaignMapper">
+    <insert id="insert" parameterType="ActivityCampaign" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO activity_campaigns
+        (title, description, reward_type, coin_amount, coupon_type, coupon_name, discount_rate,
+         threshold_amount, reduce_amount, start_at, end_at, quota_limit, coupon_quantity, coupon_expiry_days,
+         claimed_count, status, flash_sale)
+        VALUES
+        (#{title}, #{description}, #{rewardType}, #{coinAmount}, #{couponType}, #{couponName}, #{discountRate},
+         #{thresholdAmount}, #{reduceAmount}, #{startAt}, #{endAt}, #{quotaLimit}, #{couponQuantity}, #{couponExpiryDays},
+         #{claimedCount}, #{status}, #{flashSale})
+    </insert>
+
+    <select id="findById" resultType="ActivityCampaign">
+        SELECT * FROM activity_campaigns WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultType="ActivityCampaign">
+        SELECT * FROM activity_campaigns ORDER BY created_at DESC
+    </select>
+
+    <select id="findForUser" resultType="ActivityCampaign">
+        SELECT c.*,
+               CASE WHEN EXISTS (
+                   SELECT 1 FROM activity_claims ac
+                   WHERE ac.campaign_id = c.id AND ac.user_id = #{userId}
+               ) THEN TRUE ELSE FALSE END AS claimedByUser,
+               CASE
+                   WHEN c.quota_limit IS NULL OR c.quota_limit = 0 THEN NULL
+                   ELSE GREATEST(c.quota_limit - c.claimed_count, 0)
+               END AS remainingQuota,
+               CASE
+                   WHEN c.status = 'ACTIVE'
+                        AND (c.start_at IS NULL OR c.start_at &lt;= CURRENT_TIMESTAMP)
+                        AND (c.end_at IS NULL OR c.end_at &gt; CURRENT_TIMESTAMP)
+                        AND (c.quota_limit IS NULL OR c.quota_limit = 0 OR c.claimed_count &lt; c.quota_limit)
+                        AND NOT EXISTS (
+                            SELECT 1 FROM activity_claims ac
+                            WHERE ac.campaign_id = c.id AND ac.user_id = #{userId}
+                        )
+                   THEN TRUE ELSE FALSE
+               END AS claimableNow
+        FROM activity_campaigns c
+        WHERE c.status &lt;&gt; 'ARCHIVED'
+        ORDER BY c.flash_sale DESC, c.created_at DESC
+    </select>
+
+    <update id="increaseClaimedCount">
+        UPDATE activity_campaigns
+        SET claimed_count = claimed_count + 1
+        WHERE id = #{id}
+          AND status = 'ACTIVE'
+          AND (quota_limit IS NULL OR quota_limit = 0 OR claimed_count &lt; quota_limit)
+          AND (start_at IS NULL OR start_at &lt;= CURRENT_TIMESTAMP)
+          AND (end_at IS NULL OR end_at &gt; CURRENT_TIMESTAMP)
+    </update>
+
+    <update id="updateStatus">
+        UPDATE activity_campaigns SET status = #{status} WHERE id = #{id}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM activity_campaigns WHERE id = #{id}
+    </delete>
+</mapper>

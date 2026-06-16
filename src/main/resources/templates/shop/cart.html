@@ -1,0 +1,59 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>购物车 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<main class="container">
+    <div class="section-title">
+        <h2>购物车</h2>
+        <a class="muted" th:href="@{/products}">继续购物</a>
+    </div>
+    <div class="panel" th:if="${#lists.isEmpty(cart.lines)}">购物车还是空的。</div>
+    <div th:if="${!#lists.isEmpty(cart.lines)}">
+        <table class="table">
+            <thead><tr><th>商品</th><th>单价</th><th>数量</th><th>小计</th><th>操作</th></tr></thead>
+            <tbody>
+            <tr th:each="line : ${cart.lines}">
+                <td>
+                    <a class="cart-product" th:href="@{/products/{id}(id=${line.product.id})}">
+                        <img th:src="${line.product.coverUrl}" th:alt="${line.product.name}">
+                        <span th:text="${line.product.name}">商品</span>
+                    </a>
+                </td>
+                <td th:text="'¥' + ${line.product.price}">¥0</td>
+                <td>
+                    <form class="actions" th:action="@{/cart/{id}/update(id=${line.cartItemId})}" method="post">
+                        <input type="number" name="quantity" min="1" th:max="${line.product.stock}" th:value="${line.quantity}" style="width: 92px;">
+                        <button class="ghost" type="submit">更新</button>
+                    </form>
+                </td>
+                <td th:text="'¥' + ${line.subtotal}">¥0</td>
+                <td>
+                    <form th:action="@{/cart/{id}/remove(id=${line.cartItemId})}" method="post" data-confirm="确定移除该商品？">
+                        <button class="danger" type="submit">移除</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="summary-bar">
+            <strong>共 <span th:text="${cart.totalQuantity}">0</span> 件，合计 <span class="price" th:text="'¥' + ${cart.totalAmount}">¥0</span></strong>
+            <a class="button" th:href="@{/checkout}">去结算</a>
+        </div>
+    </div>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

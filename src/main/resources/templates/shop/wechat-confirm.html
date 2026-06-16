@@ -1,0 +1,32 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>寰俊纭璐拱 - 蹇冩€″晢鍩?/title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260524c')}">
+</head>
+<body class="wechat-mobile-page">
+<main class="wechat-mobile-shell">
+    <section class="wechat-mobile-card" th:if="${paySession != null}">
+        <span class="wechat-pay-mark">寰?/span>
+        <h1>纭鏈璐拱</h1>
+        <p class="muted">杩欐槸蹇冩€″晢鍩庢湰鍦版ā鎷熺‘璁ら〉锛屼笉浼氫骇鐢熺湡瀹炴墸娆俱€?/p>
+        <div class="wechat-mobile-amount">
+            <span>璁㈠崟搴斾粯</span>
+            <strong th:text="${paySession.amountText}">楼0.00</strong>
+        </div>
+        <form th:action="@{/wechat-pay/confirm/{token}(token=${token})}" method="post">
+            <button type="submit">纭璐拱</button>
+        </form>
+        <p class="muted">纭鍚庯紝璇峰洖鍒扮數鑴戦〉闈㈢瓑寰呰嚜鍔ㄨ烦杞埌璁㈠崟璇︽儏銆?/p>
+    </section>
+    <section class="wechat-mobile-card" th:if="${paySession == null}">
+        <span class="wechat-pay-mark">寰?/span>
+        <h1>浜岀淮鐮佸凡澶辨晥</h1>
+        <p class="muted">璇峰洖鍒扮數鑴戠閲嶆柊鐐瑰嚮鈥滅‘璁よ喘涔扳€濓紝鐢熸垚鏂扮殑浜岀淮鐮併€?/p>
+    </section>
+</main>
+</body>
+</html>

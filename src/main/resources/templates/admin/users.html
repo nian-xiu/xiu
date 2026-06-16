@@ -1,0 +1,44 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<main class="container admin-shell">
+    <div th:replace="~{fragments/layout :: adminNav}"></div>
+    <section>
+        <div class="section-title"><h2>用户管理</h2></div>
+        <table class="table">
+            <thead><tr><th>用户名</th><th>昵称</th><th>联系方式</th><th>角色</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+            <tr th:each="user : ${users}">
+                <td th:text="${user.username}">用户名</td>
+                <td th:text="${user.nickname}">昵称</td>
+                <td><span th:text="${user.phone}">电话</span><br><span class="muted" th:text="${user.email}">邮箱</span></td>
+                <td><span class="badge" th:text="${user.role}">角色</span></td>
+                <td th:text="${user.status}">状态</td>
+                <td>
+                    <form th:if="${user.role != 'ADMIN'}" th:action="@{/admin/users/{id}/status(id=${user.id})}" method="post" class="actions">
+                        <input type="hidden" name="status" th:value="${user.status == 'ACTIVE' ? 'DISABLED' : 'ACTIVE'}">
+                        <button class="ghost" type="submit" th:text="${user.status == 'ACTIVE' ? '停用' : '启用'}">切换</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

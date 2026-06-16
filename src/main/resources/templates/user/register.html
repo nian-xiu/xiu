@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<main class="container">
+    <section class="auth-shell panel">
+        <h1>创建账号</h1>
+        <div class="flash error" th:if="${error}" th:text="${error}"></div>
+        <form th:action="@{/register}" th:object="${registerForm}" method="post" class="form-grid">
+            <div class="field full"><label>用户名</label><input th:field="*{username}"><span class="error-text" th:errors="*{username}"></span></div>
+            <div class="field full"><label>密码</label><input type="password" th:field="*{password}"><span class="error-text" th:errors="*{password}"></span></div>
+            <div class="field full"><label>昵称</label><input th:field="*{nickname}"><span class="error-text" th:errors="*{nickname}"></span></div>
+            <div class="field"><label>手机号</label><input th:field="*{phone}"></div>
+            <div class="field"><label>邮箱</label><input th:field="*{email}"><span class="error-text" th:errors="*{email}"></span></div>
+            <button type="submit">注册并登录</button>
+            <a class="button ghost" th:href="@{/login}">已有账号</a>
+        </form>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

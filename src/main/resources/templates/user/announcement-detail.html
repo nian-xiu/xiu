@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公告详情 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container" th:if="${announcement != null}">
+    <section class="panel announcement-detail">
+        <div class="reward-chip-row">
+            <span class="badge" th:text="${announcement.categoryLabel}">分类</span>
+            <span class="badge" th:text="${announcement.statusLabel}">状态</span>
+            <span class="badge" th:if="${announcement.pinnedEnabled()}">置顶</span>
+        </div>
+        <h1 th:text="${announcement.title}">标题</h1>
+        <p class="muted" th:text="${announcement.summary}">摘要</p>
+        <div class="announcement-body" th:text="${announcement.content}">内容</div>
+        <div class="summary-bar">
+            <span class="muted" th:if="${announcement.publishedAt != null}" th:text="${#temporals.format(announcement.publishedAt, 'yyyy-MM-dd HH:mm')}">发布时间</span>
+            <a class="button ghost" th:href="@{/announcements}">返回公告列表</a>
+        </div>
+    </section>
+</main>
+<main class="container" th:if="${announcement == null}">
+    <div class="panel">公告不存在。</div>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

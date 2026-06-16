@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ssmshop.mapper.ActivityClaimMapper">
+    <insert id="insert" parameterType="ActivityClaim" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO activity_claims (campaign_id, user_id)
+        VALUES (#{campaignId}, #{userId})
+    </insert>
+
+    <select id="existsByCampaignAndUser" resultType="int">
+        SELECT COUNT(*)
+        FROM activity_claims
+        WHERE campaign_id = #{campaignId} AND user_id = #{userId}
+    </select>
+</mapper>

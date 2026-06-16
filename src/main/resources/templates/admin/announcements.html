@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公告管理 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container admin-shell">
+    <div th:replace="~{fragments/layout :: adminNav}"></div>
+    <section>
+        <div class="section-title">
+            <h2>公告管理</h2>
+            <a class="button" th:href="@{/admin/announcements/new}">新建公告</a>
+        </div>
+        <div class="announcement-grid">
+            <article class="announcement-card" th:each="announcement : ${announcements}">
+                <div class="reward-chip-row">
+                    <span class="badge" th:text="${announcement.categoryLabel}">分类</span>
+                    <span class="badge" th:text="${announcement.statusLabel}">状态</span>
+                    <span class="badge" th:if="${announcement.pinnedEnabled()}">置顶</span>
+                </div>
+                <h3 th:text="${announcement.title}">标题</h3>
+                <p class="muted" th:text="${announcement.summary}">摘要</p>
+                <div class="announcement-actions">
+                    <a class="button ghost" th:href="@{/admin/announcements/{id}/edit(id=${announcement.id})}">编辑</a>
+                    <form th:action="@{/admin/announcements/{id}/status(id=${announcement.id})}" method="post">
+                        <input th:replace="~{fragments/layout :: csrf}">
+                        <input type="hidden" name="status" th:value="${announcement.status == 'PUBLISHED' ? 'ARCHIVED' : 'PUBLISHED'}">
+                        <button type="submit" class="ghost" th:text="${announcement.status == 'PUBLISHED' ? '归档' : '发布'}">操作</button>
+                    </form>
+                    <form th:action="@{/admin/announcements/{id}/pinned(id=${announcement.id})}" method="post">
+                        <input th:replace="~{fragments/layout :: csrf}">
+                        <button type="submit" class="ghost" th:text="${announcement.pinnedEnabled() ? '取消置顶' : '置顶'}">置顶</button>
+                    </form>
+                </div>
+            </article>
+        </div>
+        <div class="panel" th:if="${#lists.isEmpty(announcements)}">暂无公告，点击右上角新建公告即可发布到前台公告中心。</div>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<main class="container">
+    <section class="auth-shell panel">
+        <h1>登录账号</h1>
+        <p class="muted">演示用户：customer / 123456；管理员：admin / admin123</p>
+        <div class="flash error" th:if="${error}" th:text="${error}"></div>
+        <form th:action="@{/login}" th:object="${loginForm}" method="post" class="form-grid">
+            <input type="hidden" name="redirect" th:value="${redirect}">
+            <div class="field full"><label>用户名</label><input th:field="*{username}"><span class="error-text" th:errors="*{username}"></span></div>
+            <div class="field full"><label>密码</label><input type="password" th:field="*{password}"><span class="error-text" th:errors="*{password}"></span></div>
+            <button type="submit">登录</button>
+            <a class="button ghost" th:href="@{/register}">注册新账号</a>
+        </form>
+    </section>
+</main>
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

@@ -1,0 +1,62 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公告 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container reward-dashboard">
+    <header class="page-hero gradient-blue">
+        <div>
+            <span class="eyebrow">公告中心</span>
+            <h1>商城公告与福利预告</h1>
+            <p class="muted">这里会展示系统公告、福利预告和活动前瞻，管理员不必每次发福利都发公告，但有重要通知时会在此统一发布。</p>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat"><span>公告数量</span><strong th:text="${#lists.size(announcements)}">0</strong></div>
+            <div class="hero-stat"><span>精选公告</span><strong th:text="${featuredAnnouncement != null ? featuredAnnouncement.title : '暂无'}">暂无</strong></div>
+        </div>
+    </header>
+
+    <section class="announcement-grid">
+        <article class="announcement-card announcement-featured" th:if="${featuredAnnouncement != null}">
+            <div class="reward-chip-row">
+                <span class="badge" th:text="${featuredAnnouncement.categoryLabel}">分类</span>
+                <span class="badge" th:text="${featuredAnnouncement.statusLabel}">状态</span>
+                <span class="badge" th:if="${featuredAnnouncement.pinnedEnabled()}">置顶</span>
+            </div>
+            <h3 th:text="${featuredAnnouncement.title}">公告标题</h3>
+            <p class="muted" th:text="${featuredAnnouncement.summary}">摘要</p>
+            <div class="announcement-actions">
+                <a class="button" th:href="@{/announcements/{id}(id=${featuredAnnouncement.id})}">查看详情</a>
+            </div>
+        </article>
+
+        <article class="announcement-card" th:each="announcement : ${announcements}">
+            <div class="reward-chip-row">
+                <span class="badge" th:text="${announcement.categoryLabel}">分类</span>
+                <span class="badge" th:text="${announcement.statusLabel}">状态</span>
+                <span class="badge" th:if="${announcement.pinnedEnabled()}">置顶</span>
+            </div>
+            <h3 th:text="${announcement.title}">标题</h3>
+            <p class="muted" th:text="${announcement.summary}">摘要</p>
+            <div class="announcement-actions">
+                <a class="button ghost" th:href="@{/announcements/{id}(id=${announcement.id})}">打开</a>
+            </div>
+        </article>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

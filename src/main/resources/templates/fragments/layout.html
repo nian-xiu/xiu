@@ -1,0 +1,115 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<body>
+<header th:fragment="header" class="site-header">
+    <meta name="csrf-token" th:content="${csrfToken}">
+    <div class="topbar">
+        <div class="header-tools">
+            <a class="brand" th:href="@{/}">
+                <img class="brand-logo" th:src="@{/img/brand-mark.svg}" alt="">
+                <span class="brand-text">心怡商城</span>
+            </a>
+            <form class="search" th:action="@{/products}" method="get">
+                <input type="search" name="keyword" placeholder="搜索商品、品牌或关键词">
+                <button type="submit">搜索</button>
+            </form>
+        </div>
+        <nav class="nav">
+            <a class="home-button nav-link"
+               th:classappend="${currentPath == '/'} ? 'is-active' : ''"
+               th:href="@{/}" aria-label="返回首页">
+                <span class="home-icon" aria-hidden="true"></span>
+                <span>首页</span>
+            </a>
+            <div class="nav-dropdown">
+                <a class="nav-dropdown-trigger nav-link"
+                   th:classappend="${currentPath != null and #strings.startsWith(currentPath, '/products')} ? 'is-active' : ''"
+                   th:href="@{/products}">全部商品</a>
+                <div class="nav-dropdown-menu">
+                    <a th:href="@{/favorites}">收藏商品</a>
+                    <a th:href="@{/blacklist}">黑名单商品</a>
+                </div>
+            </div>
+            <a class="nav-link cart-link"
+               th:classappend="${currentPath != null and #strings.startsWith(currentPath, '/cart')} ? 'is-active' : ''"
+               th:href="@{/cart}">购物车<span th:text="${cartCount}">0</span></a>
+            <a class="nav-link"
+               th:classappend="${currentPath != null and #strings.startsWith(currentPath, '/orders')} ? 'is-active' : ''"
+               th:href="@{/orders}" th:if="${currentUser != null and currentUser.role != 'ADMIN'}">我的订单</a>
+            <a class="nav-badge-link nav-link nav-service-link"
+               th:classappend="${currentPath != null and (#strings.startsWith(currentPath, '/service') or #strings.startsWith(currentPath, '/admin/service'))} ? 'is-active' : ''"
+               th:href="${currentUser != null and currentUser.role == 'ADMIN'} ? @{/admin/service} : @{/service}"
+               th:if="${currentUser != null}">
+                客服
+                <span class="nav-badge" th:if="${serviceUnreadCount > 0}" th:text="${serviceUnreadCount}">0</span>
+            </a>
+            <a class="nav-badge-link nav-link"
+               th:classappend="${currentPath != null and (#strings.startsWith(currentPath, '/activity') or #strings.startsWith(currentPath, '/admin/activities'))} ? 'is-active' : ''"
+               th:href="${currentUser != null and currentUser.role == 'ADMIN'} ? @{/admin/activities} : @{/activity}"
+               th:if="${currentUser != null}">
+                活动
+            </a>
+            <a class="nav-link"
+               th:classappend="${currentPath != null and #strings.startsWith(currentPath, '/announcements')} ? 'is-active' : ''"
+               th:href="${currentUser != null and currentUser.role == 'ADMIN'} ? @{/admin/announcements} : @{/announcements}">
+                公告
+            </a>
+            <a class="nav-link"
+               th:classappend="${currentPath != null and #strings.startsWith(currentPath, '/backpack')} ? 'is-active' : ''"
+               th:href="@{/backpack}"
+               th:if="${currentUser != null and currentUser.role != 'ADMIN'}">背包</a>
+            <a class="nav-badge-link nav-link"
+               th:classappend="${currentPath != null and #strings.startsWith(currentPath, '/mail')} ? 'is-active' : ''"
+               th:href="@{/mail}"
+               th:if="${currentUser != null and currentUser.role != 'ADMIN'}">
+                邮件
+                <span class="nav-badge" th:if="${mailUnreadCount > 0}" th:text="${mailUnreadCount}">0</span>
+            </a>
+            <a class="nav-link"
+               th:classappend="${currentPath == '/admin'} ? 'is-active' : ''"
+               th:href="@{/admin}" th:if="${currentUser != null and currentUser.role == 'ADMIN'}">后台</a>
+            <a th:href="@{/login}" th:if="${currentUser == null}">登录</a>
+            <a th:href="@{/register}" th:if="${currentUser == null}">注册</a>
+            <div class="user-menu" th:if="${currentUser != null}">
+                <a class="avatar-link" th:href="@{/settings}" title="个人设置">
+                    <span class="avatar" th:text="${#strings.substring(currentUser.nickname, 0, 1)}">用</span>
+                    <span th:text="${currentUser.nickname}">用户</span>
+                </a>
+                <form th:action="@{/logout}" method="post">
+                    <button type="submit">退出</button>
+                </form>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<aside th:fragment="adminNav" class="admin-nav">
+    <a th:classappend="${currentPath == '/admin'} ? 'is-active' : ''" th:href="@{/admin}">仪表盘</a>
+    <a th:classappend="${currentPath != null and #strings.startsWith(currentPath, '/admin/products')} ? 'is-active' : ''" th:href="@{/admin/products}">商品管理</a>
+    <a th:classappend="${currentPath != null and #strings.startsWith(currentPath, '/admin/orders')} ? 'is-active' : ''" th:href="@{/admin/orders}">订单管理</a>
+    <a th:classappend="${currentPath != null and #strings.startsWith(currentPath, '/admin/service')} ? 'is-active' : ''" th:href="@{/admin/service}">客服消息</a>
+    <a th:classappend="${currentPath != null and #strings.startsWith(currentPath, '/admin/activities')} ? 'is-active' : ''" th:href="@{/admin/activities}">活动管理</a>
+    <a th:classappend="${currentPath != null and #strings.startsWith(currentPath, '/admin/announcements')} ? 'is-active' : ''" th:href="@{/admin/announcements}">公告管理</a>
+    <a th:classappend="${currentPath != null and #strings.startsWith(currentPath, '/admin/users')} ? 'is-active' : ''" th:href="@{/admin/users}">用户管理</a>
+    <a th:href="@{/}">返回商城</a>
+</aside>
+
+<footer th:fragment="footer" class="site-footer">
+    <div>心怡商城 · Spring Boot + Thymeleaf + MyBatis + Undertow</div>
+    <div>覆盖商品、订单、营销、客服与后台运营的完整商城项目</div>
+</footer>
+
+<input th:fragment="csrf" type="hidden" name="_csrf" th:value="${csrfToken}">
+
+<div th:fragment="flash" class="flash-wrap">
+    <div th:if="${message}" class="flash success" th:text="${message}"></div>
+    <div th:if="${error}" class="flash error" th:text="${error}"></div>
+</div>
+</body>
+</html>
+
+
+
+
+
+

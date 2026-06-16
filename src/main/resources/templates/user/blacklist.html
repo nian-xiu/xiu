@@ -1,0 +1,44 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>黑名单商品 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<main class="container">
+    <div class="section-title">
+        <h2>黑名单商品</h2>
+        <a class="muted" th:href="@{/products}">返回全部商品</a>
+    </div>
+    <div class="product-grid">
+        <article class="product-card" th:each="product : ${products}">
+            <a th:href="@{/products/{id}(id=${product.id})}">
+                <img th:src="${product.coverUrl}" th:alt="${product.name}">
+                <div class="product-info">
+                    <h3 th:text="${product.name}">商品</h3>
+                    <p class="muted" th:text="${product.subtitle}">副标题</p>
+                    <span class="price" th:text="'¥' + ${product.price}">¥0</span>
+                </div>
+            </a>
+            <form class="card-menu is-visible" th:action="@{/blacklist/remove}" method="post">
+                <input type="hidden" name="productId" th:value="${product.id}">
+                <input type="hidden" name="redirect" th:value="@{/blacklist}">
+                <button type="submit">取消黑名单</button>
+            </form>
+        </article>
+    </div>
+    <div class="panel" th:if="${#lists.isEmpty(products)}">暂无黑名单商品。</div>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

@@ -1,0 +1,20 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>宸茬‘璁よ喘涔?- 蹇冩€″晢鍩?/title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260524c')}">
+</head>
+<body class="wechat-mobile-page">
+<main class="wechat-mobile-shell">
+    <section class="wechat-mobile-card">
+        <span class="wechat-pay-mark">寰?/span>
+        <h1 th:text="${confirmed} ? '宸茬‘璁よ喘涔? : '纭澶辫触'">宸茬‘璁よ喘涔?/h1>
+        <p class="muted" th:if="${confirmed}">鐢佃剳绔皢鑷姩瀹屾垚璁㈠崟鎻愪氦锛岃鍥炲埌鐢佃剳椤甸潰鏌ョ湅缁撴灉銆?/p>
+        <p class="muted" th:if="${!confirmed}">浜岀淮鐮佸凡澶辨晥锛岃鍥炲埌鐢佃剳绔噸鏂扮敓鎴愩€?/p>
+    </section>
+</main>
+</body>
+</html>

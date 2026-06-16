@@ -1,0 +1,44 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>收货地址 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<main class="container">
+    <div class="section-title">
+        <h2>收货地址</h2>
+        <a class="button" th:href="@{/addresses/new}">新增地址</a>
+    </div>
+    <table class="table" th:if="${!#lists.isEmpty(addresses)}">
+        <thead><tr><th>收货人</th><th>电话</th><th>地址</th><th>默认</th><th>操作</th></tr></thead>
+        <tbody>
+        <tr th:each="address : ${addresses}">
+            <td th:text="${address.receiver}">收货人</td>
+            <td th:text="${address.phone}">电话</td>
+            <td th:text="${address.province + address.city + address.district + address.detail}">地址</td>
+            <td><span class="badge" th:if="${address.defaultAddress}">默认</span></td>
+            <td class="actions">
+                <a class="button ghost" th:href="@{/addresses/{id}/edit(id=${address.id})}">编辑</a>
+                <form th:action="@{/addresses/{id}/delete(id=${address.id})}" method="post" data-confirm="确定删除该地址？">
+                    <button class="danger" type="submit">删除</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="panel" th:if="${#lists.isEmpty(addresses)}">还没有收货地址。</div>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

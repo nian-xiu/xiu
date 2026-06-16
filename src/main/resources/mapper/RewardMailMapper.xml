@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ssmshop.mapper.RewardMailMapper">
+    <insert id="insert" parameterType="RewardMail" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO reward_mails
+        (user_id, sender_id, sender_name, title, message, reward_type, coin_amount, coupon_type, coupon_name, discount_rate,
+         threshold_amount, reduce_amount, coupon_quantity, expires_at, status, viewed_at, claimed_at)
+        VALUES
+        (#{userId}, #{senderId}, #{senderName}, #{title}, #{message}, #{rewardType}, #{coinAmount}, #{couponType}, #{couponName},
+         #{discountRate}, #{thresholdAmount}, #{reduceAmount}, #{couponQuantity}, #{expiresAt}, #{status}, #{viewedAt}, #{claimedAt})
+    </insert>
+
+    <select id="findByUserId" resultType="RewardMail">
+        SELECT * FROM reward_mails
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findAll" resultType="RewardMail">
+        SELECT * FROM reward_mails
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findByIdAndUserId" resultType="RewardMail">
+        SELECT * FROM reward_mails
+        WHERE id = #{id} AND user_id = #{userId}
+    </select>
+
+    <select id="findClaimableByUserId" resultType="RewardMail">
+        SELECT * FROM reward_mails
+        WHERE user_id = #{userId}
+          AND status IN ('UNREAD', 'VIEWED')
+          AND (expires_at IS NULL OR expires_at &gt; CURRENT_TIMESTAMP)
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="countUnreadByUser" resultType="int">
+        SELECT COUNT(*)
+        FROM reward_mails
+        WHERE user_id = #{userId} AND status = 'UNREAD'
+    </select>
+
+    <update id="markViewedByUser">
+        UPDATE reward_mails
+        SET status = 'VIEWED', viewed_at = COALESCE(viewed_at, CURRENT_TIMESTAMP)
+        WHERE user_id = #{userId} AND status = 'UNREAD'
+    </update>
+
+    <update id="markClaimed">
+        UPDATE reward_mails
+        SET status = 'CLAIMED', claimed_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND status IN ('UNREAD', 'VIEWED')
+    </update>
+</mapper>

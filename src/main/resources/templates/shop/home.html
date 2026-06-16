@@ -1,0 +1,241 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container">
+    <section class="hero">
+        <div class="hero-copy">
+            <span class="eyebrow">精选好物 · 运营级商城体验</span>
+            <h1>心怡商城</h1>
+            <p>精选数码、居家、运动、食品与文创商品，用更清爽的方式把日常好物放到你更容易挑选的位置。</p>
+            <div class="hero-metrics">
+                <span><strong th:text="${#lists.size(categories)}">5</strong> 类目</span>
+                <span><strong th:text="${#lists.size(featuredProducts)}">8</strong> 推荐</span>
+                <span><strong>24h</strong> 服务</span>
+            </div>
+            <div class="actions">
+                <a class="button" th:href="@{/products}">浏览全部商品</a>
+                <a class="button secondary" th:if="${currentUser == null}" th:href="@{/login}">登录体验</a>
+                <a class="button secondary" th:if="${currentUser != null and currentUser.role != 'ADMIN'}" th:href="@{/orders}">查看订单</a>
+                <a class="button secondary" th:if="${currentUser != null and currentUser.role != 'ADMIN'}" th:href="@{/activity}">活动中心</a>
+                <a class="button secondary" th:if="${currentUser != null and currentUser.role == 'ADMIN'}" th:href="@{/admin/activities}">活动管理</a>
+                <a class="button ghost" th:href="@{/announcements}">查看公告</a>
+            </div>
+        </div>
+        <div class="category-carousel" data-carousel>
+            <div class="carousel-track">
+                <a class="carousel-slide is-active" th:href="@{/products(categoryId=1)}">
+                    <img th:src="@{/img/carousel/digital.svg}" alt="数码电器">
+                    <span>数码电器</span>
+                </a>
+                <a class="carousel-slide" th:href="@{/products(categoryId=2)}">
+                    <img th:src="@{/img/carousel/home-living.svg}" alt="居家生活">
+                    <span>居家生活</span>
+                </a>
+                <a class="carousel-slide" th:href="@{/products(categoryId=3)}">
+                    <img th:src="@{/img/carousel/sports.svg}" alt="运动户外">
+                    <span>运动户外</span>
+                </a>
+                <a class="carousel-slide" th:href="@{/products(categoryId=4)}">
+                    <img th:src="@{/img/carousel/food.svg}" alt="食品生鲜">
+                    <span>食品生鲜</span>
+                </a>
+                <a class="carousel-slide" th:href="@{/products(categoryId=5)}">
+                    <img th:src="@{/img/carousel/books.svg}" alt="图书文创">
+                    <span>图书文创</span>
+                </a>
+            </div>
+            <button class="carousel-control prev" type="button" data-carousel-prev aria-label="上一张">‹</button>
+            <button class="carousel-control next" type="button" data-carousel-next aria-label="下一张">›</button>
+            <div class="carousel-dots" aria-label="轮播分页">
+                <button type="button" class="is-active" data-carousel-dot="0" aria-label="数码电器"></button>
+                <button type="button" data-carousel-dot="1" aria-label="居家生活"></button>
+                <button type="button" data-carousel-dot="2" aria-label="运动户外"></button>
+                <button type="button" data-carousel-dot="3" aria-label="食品生鲜"></button>
+                <button type="button" data-carousel-dot="4" aria-label="图书文创"></button>
+            </div>
+        </div>
+    </section>
+
+    <section class="experience-strip">
+        <article>
+            <span>01</span>
+            <strong>安心挑选</strong>
+            <p>精选类目、好价推荐和库存状态放在同一视线里。</p>
+        </article>
+        <article>
+            <span>02</span>
+            <strong>透明履约</strong>
+            <p>下单后的支付、发货、完成状态都有清楚反馈。</p>
+        </article>
+        <article>
+            <span>03</span>
+            <strong>售后响应</strong>
+            <p>订单相关问题可以进入客服消息继续沟通。</p>
+        </article>
+    </section>
+
+    <section class="checkin-band" th:if="${currentUser != null and checkin != null}">
+        <div class="checkin-meta">
+            <div class="checkin-kicker"><span class="coin-mark"></span>每日签到金币</div>
+            <strong>连续签到领奖励</strong>
+            <div class="checkin-balance">
+                <span class="muted" th:text="'当前金币 ' + ${checkin.coins}">当前金币 0</span>
+                <span class="muted" th:text="'连续 ' + ${checkin.streak} + ' 天'">连续 0 天</span>
+                <span class="muted">每天 0 点刷新</span>
+            </div>
+        </div>
+        <div class="checkin-summary">
+            <span class="muted">下次签到</span>
+            <strong th:if="${!checkin.checkedToday}" th:text="${checkin.nextDay == 7 ? '第7天 9折券' : '第' + checkin.nextDay + '天 ' + checkin.nextReward + ' 金币'}">奖励</strong>
+            <strong th:if="${checkin.checkedToday}" th:text="${checkin.nextDay == 7 ? '今日已领 · 明天可领 9折券' : '今日已领 · 明天可领 ' + checkin.nextReward + ' 金币'}">今日已领</strong>
+            <span class="muted">金币结算时每 100 金币抵扣 1 元，不能与优惠券叠加使用。</span>
+        </div>
+        <div class="checkin-rewards">
+            <span th:classappend="${checkin.streak >= 1} ? 'is-done' : ''"><strong>第1天</strong><em>188金币</em></span>
+            <span th:classappend="${checkin.streak >= 2} ? 'is-done' : ''"><strong>第2天</strong><em>288金币</em></span>
+            <span th:classappend="${checkin.streak >= 3} ? 'is-done' : ''"><strong>第3天</strong><em>388金币</em></span>
+            <span th:classappend="${checkin.streak >= 4} ? 'is-done' : ''"><strong>第4天</strong><em>488金币</em></span>
+            <span th:classappend="${checkin.streak >= 5} ? 'is-done' : ''"><strong>第5天</strong><em>588金币</em></span>
+            <span th:classappend="${checkin.streak >= 6} ? 'is-done' : ''"><strong>第6天</strong><em>888金币</em></span>
+            <span th:classappend="${checkin.streak >= 7} ? 'is-done' : ''"><strong>第7天</strong><em>9折券</em></span>
+        </div>
+        <form th:action="@{/checkin}" method="post">
+            <button type="submit" th:disabled="${checkin.checkedToday}" th:text="${checkin.checkedToday} ? '今日已签到' : '立即签到'">立即签到</button>
+        </form>
+    </section>
+
+    <section th:if="${featuredAnnouncement != null}">
+        <div class="section-title">
+            <h2>公告预告</h2>
+            <a class="muted" th:href="@{/announcements}">查看全部公告</a>
+        </div>
+        <article class="announcement-hero">
+            <div>
+                <span class="badge" th:text="${featuredAnnouncement.categoryLabel}">公告</span>
+                <h3 th:text="${featuredAnnouncement.title}">公告标题</h3>
+                <p class="muted" th:text="${featuredAnnouncement.summary}">公告摘要</p>
+            </div>
+            <a class="button" th:href="@{/announcements/{id}(id=${featuredAnnouncement.id})}">查看详情</a>
+        </article>
+    </section>
+
+    <section>
+        <div class="section-title">
+            <h2>商品分类</h2>
+            <a class="muted" th:href="@{/products}">查看全部</a>
+        </div>
+        <div class="category-strip">
+            <a class="category-pill" th:each="category : ${categories}" th:href="@{/products(categoryId=${category.id})}">
+                <strong th:text="${category.name}">分类</strong>
+                <span th:text="${category.description}">描述</span>
+            </a>
+        </div>
+    </section>
+
+    <section>
+        <div class="section-title">
+            <h2>精选推荐</h2>
+            <a class="muted" th:href="@{/products(sort='sales')}">按销量排序</a>
+        </div>
+        <div class="product-grid">
+            <article class="product-card" th:each="product : ${featuredProducts}">
+                <a th:href="@{/products/{id}(id=${product.id})}">
+                    <img th:src="${product.coverUrl}" th:alt="${product.name}">
+                    <div class="product-info">
+                        <div class="product-card-top">
+                            <span class="badge" th:text="${product.categoryName}">分类</span>
+                            <span class="stock-pill" th:text="${product.stock > 30 ? '现货' : '库存紧张'}">现货</span>
+                        </div>
+                        <div class="chip-row">
+                            <span class="chip" th:text="'销量 ' + ${product.sales}">销量 0</span>
+                            <span class="chip" th:text="'评分 ' + ${product.rating}">评分 5.0</span>
+                        </div>
+                        <h3 th:text="${product.name}">商品</h3>
+                        <p class="muted" th:text="${product.subtitle}">副标题</p>
+                        <div>
+                            <span class="price" th:text="'¥' + ${product.price}">¥0</span>
+                            <span class="strike" th:if="${product.originalPrice != null}" th:text="'¥' + ${product.originalPrice}">¥0</span>
+                        </div>
+                    </div>
+                </a>
+                <form class="quick-cart" th:action="@{/cart/add}" method="post" th:if="${currentUser != null and product.status == 'ON_SALE' and product.stock > 0}">
+                    <input type="hidden" name="productId" th:value="${product.id}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit" aria-label="加入购物车">+</button>
+                </form>
+                <div class="card-menu" th:if="${currentUser != null}">
+                    <form th:action="@{/favorites/toggle}" method="post">
+                        <input type="hidden" name="productId" th:value="${product.id}">
+                        <button type="submit">收藏商品</button>
+                    </form>
+                    <form th:action="@{/blacklist/add}" method="post">
+                        <input type="hidden" name="productId" th:value="${product.id}">
+                        <input type="hidden" name="redirect" th:value="@{/}">
+                        <button type="submit">黑名单商品</button>
+                    </form>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section>
+        <div class="section-title">
+            <h2>新近入库</h2>
+            <a class="muted" th:href="@{/products(sort='rating')}">高评分商品</a>
+        </div>
+        <div class="product-grid">
+            <article class="product-card" th:each="product : ${latestProducts}">
+                <a th:href="@{/products/{id}(id=${product.id})}">
+                    <img th:src="${product.coverUrl}" th:alt="${product.name}">
+                    <div class="product-info">
+                        <div class="product-card-top">
+                            <span class="badge" th:text="${product.categoryName}">分类</span>
+                            <span class="stock-pill" th:text="${product.stock > 30 ? '现货' : '库存紧张'}">现货</span>
+                        </div>
+                        <div class="chip-row">
+                            <span class="chip" th:text="'销量 ' + ${product.sales}">销量 0</span>
+                            <span class="chip" th:text="'评分 ' + ${product.rating}">评分 5.0</span>
+                        </div>
+                        <h3 th:text="${product.name}">商品</h3>
+                        <p class="muted" th:text="${product.categoryName}">分类</p>
+                        <span class="price" th:text="'¥' + ${product.price}">¥0</span>
+                    </div>
+                </a>
+                <form class="quick-cart" th:action="@{/cart/add}" method="post" th:if="${currentUser != null and product.status == 'ON_SALE' and product.stock > 0}">
+                    <input type="hidden" name="productId" th:value="${product.id}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit" aria-label="加入购物车">+</button>
+                </form>
+                <div class="card-menu" th:if="${currentUser != null}">
+                    <form th:action="@{/favorites/toggle}" method="post">
+                        <input type="hidden" name="productId" th:value="${product.id}">
+                        <button type="submit">收藏商品</button>
+                    </form>
+                    <form th:action="@{/blacklist/add}" method="post">
+                        <input type="hidden" name="productId" th:value="${product.id}">
+                        <input type="hidden" name="redirect" th:value="@{/}">
+                        <button type="submit">黑名单商品</button>
+                    </form>
+                </div>
+            </article>
+        </div>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

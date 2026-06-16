@@ -1,0 +1,32 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${status} + ' - 心怡商城'">错误 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<main class="container">
+    <section class="panel error-page">
+        <span class="badge" th:text="${status} ?: 500">500</span>
+        <h1 th:text="${title} ?: '系统暂时不可用'">系统暂时不可用</h1>
+        <p class="muted" th:text="${message} ?: '请稍后再试。'">请稍后再试。</p>
+        <p class="muted" th:if="${path != null}" th:text="'请求路径：' + ${path}">请求路径</p>
+        <div class="actions">
+            <a class="button" th:href="@{/}">返回首页</a>
+            <a class="button ghost" th:href="@{/products}">浏览商品</a>
+        </div>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

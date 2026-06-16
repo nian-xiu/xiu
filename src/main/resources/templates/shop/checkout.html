@@ -1,0 +1,128 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>确认购买 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260524c')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container">
+    <div class="section-title">
+        <h2>确认购买</h2>
+        <a class="muted" th:href="@{/addresses/new}">新增地址</a>
+    </div>
+    <form class="panel" th:action="${checkoutMode == 'BUY_NOW'} ? @{/checkout/buy-now} : @{/checkout}" method="post"
+          data-checkout-form
+          th:attr="data-original-amount=${cart.totalAmount},data-coins=${profile.coins ?: 0}">
+        <input type="hidden" name="productId" th:if="${checkoutMode == 'BUY_NOW'}" th:value="${buyNowProductId}">
+        <input type="hidden" name="quantity" th:if="${checkoutMode == 'BUY_NOW'}" th:value="${buyNowQuantity}">
+        <input type="hidden" name="wechatToken" value="" data-wechat-token>
+        <div class="field">
+            <label>收货地址</label>
+            <select name="addressId">
+                <option th:each="address : ${addresses}" th:value="${address.id}" th:selected="${address.defaultAddress}" th:text="${address.fullText()}">地址</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>支付方式</label>
+            <select name="paymentMethod">
+                <option value="ONLINE">在线支付</option>
+                <option value="WECHAT">微信支付</option>
+                <option value="COD">货到付款</option>
+            </select>
+        </div>
+        <div class="discount-box">
+            <strong>优惠方式（二选一）</strong>
+            <label class="radio-row">
+                <input type="radio" name="discountType" value="" checked>
+                不使用优惠
+            </label>
+            <label class="radio-row">
+                <input type="radio" name="discountType" value="COINS" th:disabled="${profile.coins == null or profile.coins < 100}">
+                使用金币抵扣
+                <span class="muted" th:text="'当前 ' + (${profile.coins} ?: 0) + ' 金币，每 100 金币抵扣 1 元'">金币</span>
+            </label>
+            <label class="radio-row">
+                <input type="radio" name="discountType" value="COUPON" th:disabled="${#lists.isEmpty(coupons)}">
+                使用优惠券
+            </label>
+            <select name="couponId" th:disabled="${#lists.isEmpty(coupons)}">
+                <option value="">选择优惠券</option>
+                <option th:each="coupon : ${coupons}"
+                        th:value="${coupon.id}"
+                        th:attr="data-type=${coupon.couponType},data-rate=${coupon.discountRate},data-threshold=${coupon.thresholdAmount},data-reduce=${coupon.reduceAmount}"
+                        th:text="${coupon.displayName + ' · ' + coupon.ruleText + ' · 剩余 ' + coupon.usableQuantity + ' 张' + (coupon.expiresAt != null ? ' · 到期 ' + #temporals.format(coupon.expiresAt, 'yyyy-MM-dd') : '')}">
+                    优惠券
+                </option>
+            </select>
+            <div class="panel discount-summary">
+                <strong>当前优惠券说明</strong>
+                <p class="muted" th:if="${#lists.isEmpty(coupons)}">暂无可用优惠券。</p>
+                <p class="muted" th:if="${!#lists.isEmpty(coupons)}">优惠券与金币抵扣不能同时使用，金币只能按整百抵扣。</p>
+            </div>
+        </div>
+        <div class="field">
+            <label>订单备注</label>
+            <textarea name="remark" placeholder="配送时间、发票或其他需求"></textarea>
+        </div>
+        <table class="table">
+            <tbody>
+            <tr th:each="line : ${cart.lines}">
+                <td class="cart-product">
+                    <img th:src="${line.product.coverUrl}" th:alt="${line.product.name}">
+                    <span th:text="${line.product.name}">商品</span>
+                </td>
+                <td th:text="'x ' + ${line.quantity}">x 1</td>
+                <td th:text="'¥' + ${line.subtotal}">¥0</td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="summary-bar">
+            <div class="checkout-total-card">
+                <div>商品原价 <span data-original-display th:text="'¥' + ${cart.totalAmount}">¥0</span></div>
+                <div>优惠抵扣 <span data-discount-display>-¥0.00</span></div>
+                <strong>实际应付 <span class="price" data-payable-display th:text="'¥' + ${cart.totalAmount}">¥0</span></strong>
+                <p class="muted" data-discount-hint>选择金币或优惠券后，这里会实时更新实付金额。</p>
+            </div>
+            <button type="submit">确认购买</button>
+        </div>
+        <div class="wechat-pay-modal" data-wechat-modal hidden>
+            <div class="wechat-pay-dialog" role="dialog" aria-modal="true" aria-labelledby="wechatPayTitle">
+                <button class="wechat-pay-close" type="button" aria-label="关闭" data-wechat-close>×</button>
+                <div class="wechat-pay-head">
+                    <span class="wechat-pay-mark">微</span>
+                    <div>
+                        <strong id="wechatPayTitle">微信扫码确认购买</strong>
+                        <p class="muted">这是站内模拟确认，不会产生真实扣款。</p>
+                    </div>
+                </div>
+                <div class="wechat-pay-body">
+                    <div class="wechat-qr-frame" aria-label="微信可扫码确认链接" data-wechat-qr></div>
+                    <div class="wechat-pay-status">
+                        <strong>等待手机确认</strong>
+                        <p data-wechat-status>请使用微信扫描二维码，并在手机页面点击确认购买。</p>
+                        <div class="wechat-pay-amount">应付 <span data-payable-display th:text="'¥' + ${cart.totalAmount}">¥0</span></div>
+                        <p class="muted wechat-pay-link" data-wechat-link></p>
+                    </div>
+                </div>
+                <div class="wechat-pay-actions">
+                    <button class="ghost" type="button" data-wechat-close>取消</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</main>
+<script th:src="@{/js/vendor/qrcode.js(v='20260524c')}"></script>
+<script th:src="@{/js/app.js(v='20260524c')}"></script>
+</body>
+</html>
+
+
+
+
+
+

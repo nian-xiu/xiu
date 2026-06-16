@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ssmshop.mapper.ServiceMessageMapper">
+    <insert id="insert" parameterType="ServiceMessage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO service_messages (user_id, order_id, message, status, sender_role, user_unread, admin_unread)
+        VALUES (#{userId}, #{orderId}, #{message}, #{status}, #{senderRole}, #{userUnread}, #{adminUnread})
+    </insert>
+
+    <select id="findByOrderIdAndUserId" resultType="ServiceMessage">
+        SELECT * FROM service_messages
+        WHERE order_id = #{orderId} AND user_id = #{userId}
+        ORDER BY created_at ASC
+    </select>
+
+    <select id="findByOrderId" resultType="ServiceMessage">
+        SELECT * FROM service_messages
+        WHERE order_id = #{orderId}
+        ORDER BY created_at ASC
+    </select>
+
+    <select id="findByUserId" resultType="ServiceMessage">
+        SELECT * FROM service_messages
+        WHERE user_id = #{userId}
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="findAll" resultType="ServiceMessage">
+        SELECT sm.*, u.username
+        FROM service_messages sm
+        JOIN users u ON u.id = sm.user_id
+        ORDER BY sm.admin_unread DESC, sm.created_at DESC
+    </select>
+
+    <select id="countAdminUnread" resultType="int">
+        SELECT COUNT(*) FROM service_messages WHERE admin_unread = TRUE
+    </select>
+
+    <select id="countUserUnread" resultType="int">
+        SELECT COUNT(*) FROM service_messages WHERE user_id = #{userId} AND user_unread = TRUE
+    </select>
+
+    <update id="markAdminRead">
+        UPDATE service_messages SET admin_unread = FALSE WHERE order_id = #{orderId}
+    </update>
+
+    <update id="markAllAdminRead">
+        UPDATE service_messages SET admin_unread = FALSE WHERE admin_unread = TRUE
+    </update>
+
+    <update id="markUserRead">
+        UPDATE service_messages SET user_unread = FALSE WHERE user_id = #{userId} AND order_id = #{orderId}
+    </update>
+
+    <update id="markAllUserRead">
+        UPDATE service_messages SET user_unread = FALSE WHERE user_id = #{userId}
+    </update>
+</mapper>

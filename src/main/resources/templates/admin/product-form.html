@@ -1,0 +1,92 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品表单 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<main class="container admin-shell">
+    <div th:replace="~{fragments/layout :: adminNav}"></div>
+    <section class="panel">
+        <h1>商品信息</h1>
+        <form th:action="${action}" th:object="${productForm}" method="post" enctype="multipart/form-data" class="form-grid">
+            <div class="field">
+                <label>商品名称</label>
+                <input th:field="*{name}">
+                <span class="error-text" th:errors="*{name}"></span>
+            </div>
+            <div class="field">
+                <label>分类</label>
+                <select th:field="*{categoryId}">
+                    <option value="">请选择</option>
+                    <option th:each="category : ${categories}" th:value="${category.id}" th:text="${category.name}">分类</option>
+                </select>
+                <span class="error-text" th:errors="*{categoryId}"></span>
+            </div>
+            <div class="field full">
+                <label>副标题</label>
+                <input th:field="*{subtitle}">
+            </div>
+            <div class="field">
+                <label>售价</label>
+                <input type="number" step="0.01" th:field="*{price}">
+                <span class="error-text" th:errors="*{price}"></span>
+            </div>
+            <div class="field">
+                <label>原价</label>
+                <input type="number" step="0.01" th:field="*{originalPrice}">
+            </div>
+            <div class="field">
+                <label>库存</label>
+                <input type="number" th:field="*{stock}">
+                <span class="error-text" th:errors="*{stock}"></span>
+            </div>
+            <div class="field">
+                <label>状态</label>
+                <select th:field="*{status}">
+                    <option value="ON_SALE">上架</option>
+                    <option value="OFF_SALE">下架</option>
+                </select>
+            </div>
+            <div class="field full upload-field">
+                <label>封面图</label>
+                <div class="upload-row">
+                    <div class="cover-preview">
+                        <img data-cover-preview th:if="*{coverUrl}" th:src="*{coverUrl}" alt="封面预览">
+                        <span data-cover-empty th:classappend="*{coverUrl} ? 'is-hidden' : ''">暂无封面</span>
+                    </div>
+                    <div class="upload-controls">
+                        <input type="file" name="coverImage" accept="image/png,image/jpeg,image/webp,image/gif" data-cover-input>
+                        <input th:field="*{coverUrl}" placeholder="也可以粘贴图片 URL">
+                        <span class="error-text" th:errors="*{coverUrl}"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="field full">
+                <label>商品描述</label>
+                <textarea th:field="*{description}"></textarea>
+            </div>
+            <label class="field full checkbox-field">
+                <span>设为首页推荐</span>
+                <input type="checkbox" th:field="*{featured}">
+            </label>
+            <div class="actions">
+                <button type="submit">保存商品</button>
+                <a class="button ghost" th:href="@{/admin/products}">返回列表</a>
+            </div>
+        </form>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

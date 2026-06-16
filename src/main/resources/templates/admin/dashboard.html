@@ -1,0 +1,75 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>后台仪表盘 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<main class="container admin-shell">
+    <div th:replace="~{fragments/layout :: adminNav}"></div>
+    <section>
+        <header class="admin-hero">
+            <div>
+                <span class="eyebrow">运营中枢</span>
+                <h1>运营仪表盘</h1>
+                <p class="muted">聚合商品、订单、会员和收入关键指标，方便快速发现库存与履约风险。</p>
+            </div>
+            <a class="button" th:href="@{/admin/products/new}">新增商品</a>
+        </header>
+        <div class="stats-grid dashboard-stats">
+            <div class="stat accent-green"><span>在售商品</span><strong th:text="${stats.activeProductCount}">0</strong><small th:text="'全部 ' + ${stats.productCount} + ' 件'">全部 0 件</small></div>
+            <div class="stat accent-orange"><span>低库存</span><strong th:text="${stats.lowStockCount}">0</strong><small>库存低于或等于 30</small></div>
+            <div class="stat accent-blue"><span>待履约</span><strong th:text="${stats.paidOrderCount + stats.shippedOrderCount}">0</strong><small th:text="'已支付 ' + ${stats.paidOrderCount} + ' / 已发货 ' + ${stats.shippedOrderCount}">状态</small></div>
+            <div class="stat accent-red"><span>成交额</span><strong th:text="'¥' + ${stats.revenue}">¥0</strong><small th:text="'客单价 ¥' + ${stats.averageOrderAmount}">客单价</small></div>
+        </div>
+        <div class="ops-grid">
+            <article class="panel ops-card">
+                <h2>今日运营建议</h2>
+                <p class="muted">优先检查低库存商品，处理已支付订单，并保持活动与公告同步。</p>
+                <div class="actions">
+                    <a class="button ghost" th:href="@{/admin/products(sort='stockAsc')}">查看库存</a>
+                    <a class="button ghost" th:href="@{/admin/orders(status='PAID')}">处理订单</a>
+                    <a class="button ghost" th:href="@{/admin/activities}">维护活动</a>
+                </div>
+            </article>
+            <article class="panel ops-card">
+                <h2>订单结构</h2>
+                <div class="status-bars">
+                    <span><em style="--value: 70%"></em><strong>已支付</strong><b th:text="${stats.paidOrderCount}">0</b></span>
+                    <span><em style="--value: 52%"></em><strong>已发货</strong><b th:text="${stats.shippedOrderCount}">0</b></span>
+                    <span><em style="--value: 88%"></em><strong>已完成</strong><b th:text="${stats.completedOrderCount}">0</b></span>
+                </div>
+            </article>
+        </div>
+        <div class="section-title">
+            <h2>最近订单</h2>
+            <a class="muted" th:href="@{/admin/orders}">全部订单</a>
+        </div>
+        <table class="table">
+            <thead><tr><th>订单号</th><th>用户</th><th>金额</th><th>优惠</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody>
+            <tr th:each="order, iter : ${orders}" th:if="${iter.index < 6}">
+                <td th:text="${order.orderNo}">订单号</td>
+                <td th:text="${order.username}">用户</td>
+                <td th:text="'¥' + ${order.totalAmount}">¥0</td>
+                <td class="muted" th:text="${order.discountText}">优惠</td>
+                <td><span class="badge" th:text="${order.status}">状态</span></td>
+                <td><a class="button ghost" th:href="@{/admin/orders/{id}(id=${order.id})}">处理</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

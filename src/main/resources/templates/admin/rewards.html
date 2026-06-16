@@ -1,0 +1,258 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动管理 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container admin-shell">
+    <div th:replace="~{fragments/layout :: adminNav}"></div>
+    <section class="reward-dashboard">
+        <header class="page-hero">
+            <div>
+                <span class="eyebrow">运营中心</span>
+                <h1>活动 / 邮件 / 兑换码</h1>
+                <p class="muted">管理员可在此发布公开活动、定向邮件、群发奖励，或生成兑换码批量发券。</p>
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat"><span>活动</span><strong th:text="${#lists.size(campaigns)}">0</strong></div>
+                <div class="hero-stat"><span>邮件</span><strong th:text="${#lists.size(mails)}">0</strong></div>
+                <div class="hero-stat"><span>兑换码</span><strong th:text="${#lists.size(codes)}">0</strong></div>
+            </div>
+        </header>
+
+        <article class="panel">
+            <header class="panel-head">
+                <h2>创建公开活动</h2>
+                <span class="muted">所有用户可见，可设置限时秒杀和领取名额</span>
+            </header>
+            <form class="form-grid" th:action="@{/admin/activities/campaigns}" method="post" th:object="${campaignForm}">
+                <input th:replace="~{fragments/layout :: csrf}">
+                <div class="field"><label>活动标题</label><input th:field="*{title}" required></div>
+                <div class="field">
+                    <label>奖励类型</label>
+                    <select th:field="*{rewardType}" data-reward-type>
+                        <option value="COIN">金币</option>
+                        <option value="COUPON">优惠券</option>
+                    </select>
+                </div>
+                <div class="field full"><label>活动说明</label><textarea th:field="*{description}" rows="2"></textarea></div>
+                <div class="field" data-coin-only><label>金币数量</label><input type="number" min="1" th:field="*{coinAmount}"></div>
+                <div class="field" data-coupon-only>
+                    <label>优惠券类型</label>
+                    <select th:field="*{couponType}" data-coupon-type>
+                        <option value="DISCOUNT_RATE">折扣券</option>
+                        <option value="AMOUNT_OFF">满减券</option>
+                    </select>
+                </div>
+                <div class="field" data-discount-rate><label>折扣率（0~1）</label><input type="number" step="0.01" min="0.1" max="0.99" th:field="*{discountRate}" placeholder="0.9 = 九折"></div>
+                <div class="field" data-amount-off><label>门槛金额</label><input type="number" step="0.01" min="0.01" th:field="*{thresholdAmount}"></div>
+                <div class="field" data-amount-off><label>减免金额</label><input type="number" step="0.01" min="0.01" th:field="*{reduceAmount}"></div>
+                <div class="field"><label>开始时间</label><input type="datetime-local" th:field="*{startAt}"></div>
+                <div class="field"><label>结束时间</label><input type="datetime-local" th:field="*{endAt}"></div>
+                <div class="field"><label>领取名额</label><input type="number" min="0" th:field="*{quotaLimit}" placeholder="0 表示不限领取人数"></div>
+                <div class="field" data-coupon-only><label>每人获得优惠券数量</label><input type="number" min="1" th:field="*{couponQuantity}" placeholder="默认 1 张"></div>
+                <div class="field" data-coupon-only><label>优惠券有效天数</label><input type="number" min="0" th:field="*{expiryDays}" placeholder="0 表示永久"></div>
+                <div class="field switch-field">
+                    <label class="switch">
+                        <input type="checkbox" th:field="*{flashSale}">
+                        <span>开启限时秒杀样式（用户端显示倒计时大卡）</span>
+                    </label>
+                </div>
+                <div class="field full"><button type="submit" class="primary">创建活动</button></div>
+            </form>
+        </article>
+
+        <article class="panel">
+            <header class="panel-head">
+                <h2>发送奖励邮件</h2>
+                <span class="muted">支持指定用户名定向发送，或一键群发给所有活跃用户</span>
+            </header>
+            <form class="form-grid" th:action="@{/admin/activities/mails}" method="post" th:object="${mailForm}">
+                <input th:replace="~{fragments/layout :: csrf}">
+                <div class="field switch-field full">
+                    <label class="switch">
+                        <input type="checkbox" th:field="*{broadcast}" data-broadcast-toggle>
+                        <span>群发模式：发送给所有 CUSTOMER 状态为 ACTIVE 的用户</span>
+                    </label>
+                </div>
+                <div class="field" data-target-username><label>收件人用户名</label><input th:field="*{username}" placeholder="customer"></div>
+                <div class="field"><label>邮件标题</label><input th:field="*{title}" required></div>
+                <div class="field full"><label>邮件内容</label><textarea th:field="*{message}" rows="2"></textarea></div>
+                <div class="field">
+                    <label>奖励类型</label>
+                    <select th:field="*{rewardType}" data-reward-type>
+                        <option value="COIN">金币</option>
+                        <option value="COUPON">优惠券</option>
+                    </select>
+                </div>
+                <div class="field" data-coin-only><label>金币数量</label><input type="number" min="1" th:field="*{coinAmount}"></div>
+                <div class="field" data-coupon-only>
+                    <label>优惠券类型</label>
+                    <select th:field="*{couponType}" data-coupon-type>
+                        <option value="DISCOUNT_RATE">折扣券</option>
+                        <option value="AMOUNT_OFF">满减券</option>
+                    </select>
+                </div>
+                <div class="field" data-discount-rate><label>折扣率</label><input type="number" step="0.01" min="0.1" max="0.99" th:field="*{discountRate}"></div>
+                <div class="field" data-amount-off><label>门槛金额</label><input type="number" step="0.01" min="0.01" th:field="*{thresholdAmount}"></div>
+                <div class="field" data-amount-off><label>减免金额</label><input type="number" step="0.01" min="0.01" th:field="*{reduceAmount}"></div>
+                <div class="field"><label>到期时间（可选）</label><input type="datetime-local" th:field="*{expiresAt}"></div>
+                <div class="field" data-coupon-only><label>优惠券数量</label><input type="number" min="1" th:field="*{couponQuantity}" placeholder="默认 1 张"></div>
+                <div class="field"><label>有效天数</label><input type="number" min="0" th:field="*{expiryDays}" placeholder="0 表示永久"></div>
+                <div class="field full"><button type="submit" class="primary">发送邮件</button></div>
+            </form>
+        </article>
+
+        <article class="panel">
+            <header class="panel-head">
+                <h2>生成优惠券兑换码</h2>
+                <span class="muted">用户在背包页输码即可兑换，可设置名额和有效期</span>
+            </header>
+            <form class="form-grid" th:action="@{/admin/activities/codes}" method="post" th:object="${codeForm}">
+                <input th:replace="~{fragments/layout :: csrf}">
+                <div class="field"><label>兑换码（留空自动生成）</label><input th:field="*{code}" placeholder="例如 SUMMER2026"></div>
+                <div class="field"><label>奖励标题</label><input th:field="*{title}" required></div>
+                <div class="field">
+                    <label>奖励类型</label>
+                    <select th:field="*{rewardType}" data-reward-type>
+                        <option value="COIN">金币</option>
+                        <option value="COUPON" selected>优惠券</option>
+                    </select>
+                </div>
+                <div class="field" data-coin-only><label>金币数量</label><input type="number" min="1" th:field="*{coinAmount}"></div>
+                <div class="field" data-coupon-only>
+                    <label>优惠券类型</label>
+                    <select th:field="*{couponType}" data-coupon-type>
+                        <option value="DISCOUNT_RATE">折扣券</option>
+                        <option value="AMOUNT_OFF">满减券</option>
+                    </select>
+                </div>
+                <div class="field" data-discount-rate><label>折扣率</label><input type="number" step="0.01" min="0.1" max="0.99" th:field="*{discountRate}"></div>
+                <div class="field" data-amount-off><label>门槛金额</label><input type="number" step="0.01" min="0.01" th:field="*{thresholdAmount}"></div>
+                <div class="field" data-amount-off><label>减免金额</label><input type="number" step="0.01" min="0.01" th:field="*{reduceAmount}"></div>
+                <div class="field"><label>有效天数</label><input type="number" min="0" th:field="*{expiryDays}" placeholder="0 表示永久"></div>
+                <div class="field" data-coupon-only><label>每次兑换优惠券数量</label><input type="number" min="1" th:field="*{couponQuantity}" placeholder="默认 1 张"></div>
+                <div class="field"><label>到期时间（可选）</label><input type="datetime-local" th:field="*{expiresAt}"></div>
+                <div class="field"><label>兑换名额</label><input type="number" min="0" th:field="*{totalQuota}" placeholder="0 表示不限兑换人数"></div>
+                <div class="field full"><button type="submit" class="primary">生成兑换码</button></div>
+            </form>
+        </article>
+
+        <header class="section-title">
+            <h2>活动列表</h2>
+            <span class="muted">最近创建的活动排在前面</span>
+        </header>
+        <div class="reward-grid">
+            <article class="reward-card" th:each="campaign : ${campaigns}" th:classappend="${campaign.flashSaleEnabled} ? 'is-flash' : ''">
+                <div class="reward-card-head">
+                    <div class="reward-meta">
+                        <div class="reward-chip-row">
+                            <span class="badge" th:text="${campaign.statusLabel}">状态</span>
+                            <span class="badge" th:text="${campaign.rewardLabel}">奖励</span>
+                            <span class="badge badge-flash" th:if="${campaign.flashSaleEnabled}">限时秒杀</span>
+                        </div>
+                        <h3 th:text="${campaign.title}">标题</h3>
+                        <p class="muted" th:text="${campaign.description}">说明</p>
+                    </div>
+                    <span class="badge" th:text="${campaign.quotaLabel}">名额</span>
+                </div>
+                <div class="reward-divider"></div>
+                <p class="muted" th:text="${campaign.windowLabel}">时间</p>
+                <div class="reward-actions">
+                    <form th:if="${campaign.status == 'ACTIVE'}" th:action="@{/admin/activities/campaigns/{id}/status(id=${campaign.id})}" method="post">
+                        <input th:replace="~{fragments/layout :: csrf}">
+                        <input type="hidden" name="status" value="PAUSED">
+                        <button type="submit" class="ghost">暂停</button>
+                    </form>
+                    <form th:if="${campaign.status != 'ACTIVE'}" th:action="@{/admin/activities/campaigns/{id}/status(id=${campaign.id})}" method="post">
+                        <input th:replace="~{fragments/layout :: csrf}">
+                        <input type="hidden" name="status" value="ACTIVE">
+                        <button type="submit">启用</button>
+                    </form>
+                    <form th:action="@{/admin/activities/campaigns/{id}/clone(id=${campaign.id})}" method="post">
+                        <input th:replace="~{fragments/layout :: csrf}">
+                        <button type="submit" class="ghost">克隆</button>
+                    </form>
+                    <form th:action="@{/admin/activities/campaigns/{id}/delete(id=${campaign.id})}" method="post" data-confirm="确定删除该活动？">
+                        <input th:replace="~{fragments/layout :: csrf}">
+                        <button type="submit" class="ghost danger">删除</button>
+                    </form>
+                </div>
+            </article>
+        </div>
+
+        <header class="section-title">
+            <h2>邮件记录</h2>
+            <span class="muted">最近发送的邮件</span>
+        </header>
+        <div class="mail-grid">
+            <article class="mail-card" th:each="mail : ${mails}">
+                <div class="mail-head">
+                    <div class="mail-meta">
+                        <div class="reward-chip-row">
+                            <span class="badge" th:text="${mail.statusLabel}">状态</span>
+                            <span class="badge" th:text="${mail.rewardLabel}">奖励</span>
+                        </div>
+                        <h3 th:text="${mail.title}">标题</h3>
+                        <p class="muted" th:text="${'收件人 ID ' + mail.userId}">用户</p>
+                    </div>
+                    <span class="badge" th:text="${#temporals.format(mail.createdAt, 'yyyy-MM-dd HH:mm')}">时间</span>
+                </div>
+                <p class="muted" th:text="${mail.message}">内容</p>
+            </article>
+        </div>
+
+        <header class="section-title">
+            <h2>兑换码列表</h2>
+            <span class="muted">用户在背包页输码兑换</span>
+        </header>
+        <div class="reward-grid">
+            <article class="reward-card" th:each="code : ${codes}">
+                <div class="reward-card-head">
+                    <div class="reward-meta">
+                        <div class="reward-chip-row">
+                            <span class="badge" th:text="${code.statusLabel}">状态</span>
+                            <span class="badge" th:text="${code.rewardLabel}">奖励</span>
+                        </div>
+                        <h3 class="code-text" th:text="${code.code}">CODE</h3>
+                        <p class="muted" th:text="${code.title}">标题</p>
+                    </div>
+                    <span class="badge" th:text="${code.quotaLabel}">名额</span>
+                </div>
+                <div class="reward-divider"></div>
+                <p class="muted" th:if="${code.expiresAt != null}" th:text="${'到期：' + #temporals.format(code.expiresAt, 'yyyy-MM-dd HH:mm')}">到期</p>
+                <div class="reward-actions">
+                    <form th:if="${code.status == 'ACTIVE'}" th:action="@{/admin/activities/codes/{id}/status(id=${code.id})}" method="post">
+                        <input th:replace="~{fragments/layout :: csrf}">
+                        <input type="hidden" name="status" value="PAUSED">
+                        <button type="submit" class="ghost">停用</button>
+                    </form>
+                    <form th:if="${code.status != 'ACTIVE'}" th:action="@{/admin/activities/codes/{id}/status(id=${code.id})}" method="post">
+                        <input th:replace="~{fragments/layout :: csrf}">
+                        <input type="hidden" name="status" value="ACTIVE">
+                        <button type="submit">启用</button>
+                    </form>
+                    <form th:action="@{/admin/activities/codes/{id}/delete(id=${code.id})}" method="post" data-confirm="确定删除该兑换码？">
+                        <input th:replace="~{fragments/layout :: csrf}">
+                        <button type="submit" class="ghost danger">删除</button>
+                    </form>
+                </div>
+            </article>
+        </div>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+

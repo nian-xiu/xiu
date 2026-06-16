@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>编辑公告 - 心怡商城</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260607a')}">
+</head>
+<body>
+<div th:replace="~{fragments/layout :: header}"></div>
+<div th:replace="~{fragments/layout :: flash}"></div>
+<main class="container admin-shell">
+    <div th:replace="~{fragments/layout :: adminNav}"></div>
+    <section class="panel">
+        <div class="section-title compact">
+            <h2 th:text="${announcementForm.id == null ? '新建公告' : '编辑公告'}">公告</h2>
+            <a class="muted" th:href="@{/admin/announcements}">返回列表</a>
+        </div>
+        <form class="form-grid" th:action="@{/admin/announcements/save}" method="post" th:object="${announcementForm}">
+            <input th:replace="~{fragments/layout :: csrf}">
+            <input type="hidden" th:field="*{id}">
+            <div class="field full"><label>标题</label><input th:field="*{title}"></div>
+            <div class="field full"><label>摘要</label><input th:field="*{summary}"></div>
+            <div class="field"><label>分类</label><select th:field="*{category}"><option value="GENERAL">一般公告</option><option value="BENEFIT">福利预告</option><option value="SYSTEM">系统公告</option></select></div>
+            <div class="field"><label>状态</label><select th:field="*{status}"><option value="DRAFT">草稿</option><option value="PUBLISHED">发布</option></select></div>
+            <div class="field"><label>关联活动 ID</label><input type="number" min="0" th:field="*{relatedCampaignId}" placeholder="可选"></div>
+            <div class="field"><label>发布时间</label><input type="datetime-local" th:field="*{publishedAt}"></div>
+            <div class="field"><label>到期时间</label><input type="datetime-local" th:field="*{expiresAt}"></div>
+            <div class="field switch-field full">
+                <label class="switch">
+                    <input type="checkbox" th:field="*{pinned}">
+                    <span>置顶公告</span>
+                </label>
+            </div>
+            <div class="field full"><label>内容</label><textarea th:field="*{content}" rows="10"></textarea></div>
+            <div class="field full"><button type="submit" class="primary">保存公告</button></div>
+        </form>
+    </section>
+</main>
+<script th:src="@{/js/app.js(v='20260607a')}"></script>
+</body>
+</html>
+
+
+
+
+
+
