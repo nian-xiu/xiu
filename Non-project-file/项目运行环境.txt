@@ -1,14 +1,13 @@
-心怡商城项目运行环境
-
-1. 操作系统：Windows 10/11 或其他可运行 Java 21、Maven、MySQL 的系统。
-2. JDK：Java 21，pom.xml 中 java.version 配置为 21。
+心悦商城项目运行环境
+1. 操作系统：Windows 10/11，或其他可运行 Java 21、Maven、MySQL 的系统。
+2. JDK：Java 21，`pom.xml` 中 `java.version` 配置为 21。
 3. 构建工具：Maven 3.8+，用于下载依赖、编译和打包项目。
-4. 数据库：MySQL 8.0/9.x，需提前创建数据库 ssm_shop。
-5. 数据库连接：src/main/resources/application.yml 默认配置为 jdbc:mysql://localhost:3306/ssm_shop，用户名 root，密码 123456，可按本机环境修改。
+4. 数据库：MySQL 8.0 / 9.x，需提前创建数据库 `ssm_shop`。
+5. 数据库连接：`src/main/resources/application.yml` 默认读取环境变量 `DB_URL`、`DB_USERNAME`、`DB_PASSWORD`；未设置时会回退到本地默认值，请按本机环境修改。
 6. Web 容器：项目使用内嵌 Undertow，不需要单独安装 Tomcat。
-7. 主要框架/依赖：Spring Boot 3.5.7、Spring MVC、Thymeleaf、Spring Validation、Spring Security Crypto、MyBatis Spring Boot Starter 3.0.5、MySQL Connector/J。
-8. 端口：默认访问端口为 8080，商城首页为 http://localhost:8080/，后台入口为 http://localhost:8080/admin。
-9. 数据初始化：建库后首次启动由 DataSeeder 执行 src/main/resources/db/schema.sql 和 data.sql，写入表结构与演示数据。
-10. 推荐启动：在项目根目录执行 mvn package -DskipTests 后运行 java -Djava.io.tmpdir=tmp -jar target/ssm-shop-1.0.0.jar；Windows 下也可执行 powershell -ExecutionPolicy Bypass -File tools/run-app.ps1。
-11. 演示账号：普通用户 customer / 123456；管理员 admin / admin123。
-12. 上传目录：商品图片默认保存到 uploads/products，对应配置项 app.upload.product-image-dir。
+7. 主要框架与依赖：Spring Boot 3.5.7、Spring MVC、Thymeleaf、Spring Validation、Spring Security Crypto、MyBatis Spring Boot Starter 3.0.5、MySQL Connector/J。
+8. 端口：默认访问端口为 8080，商城首页为 http://localhost:8080/，后台入口为 http://localhost:8080/admin 。
+9. 数据初始化：建库后首次启动由 `DataSeeder` 执行 `src/main/resources/db/schema.sql` 和 `data.sql`，写入表结构与演示数据。
+10. 推荐启动方式：在项目根目录执行 `mvn package -DskipTests` 后运行 `java -Djava.io.tmpdir=tmp -jar target/ssm-shop-1.0.0.jar`，Windows 下也可执行 `powershell -ExecutionPolicy Bypass -File tools/run-app.ps1`。
+11. 演示账号：普通用户 `customer / 123456`；管理员 `admin / admin123`。
+12. 上传目录：商品图片默认保存在 `uploads/products`，对应配置项 `app.upload.product-image-dir`。

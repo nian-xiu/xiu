@@ -1,11 +1,7 @@
 target/
 tmp/
-app.log
-app.err.log
-app.live.out.log
-app.live.err.log
-app.start.out.log
-app.start.err.log
+*.log
 *.iml
 .idea/
 *.class
+src/main/resources/application-local.yml
