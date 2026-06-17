@@ -24,13 +24,36 @@ function Write-Step([string]$Message) {
     Write-Host "==> $Message" -ForegroundColor Cyan
 }
 
+function Test-ZipArchive([string]$Path) {
+    if (-not (Test-Path $Path)) {
+        return $false
+    }
+    try {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        $archive = [System.IO.Compression.ZipFile]::OpenRead($Path)
+        $archive.Dispose()
+        return $true
+    } catch {
+        return $false
+    }
+}
+
 function Download-File([string]$Url, [string]$OutFile) {
     if (Test-Path $OutFile) {
-        Write-Host "Already downloaded: $OutFile"
-        return
+        if ($OutFile.ToLowerInvariant().EndsWith(".zip") -and -not (Test-ZipArchive $OutFile)) {
+            Write-Warning "Existing download is not a valid zip, deleting: $OutFile"
+            Remove-Item -LiteralPath $OutFile -Force
+        } else {
+            Write-Host "Already downloaded: $OutFile"
+            return
+        }
     }
     Write-Host "Downloading: $Url"
     Invoke-WebRequest -Uri $Url -OutFile $OutFile -UseBasicParsing
+    if ($OutFile.ToLowerInvariant().EndsWith(".zip") -and -not (Test-ZipArchive $OutFile)) {
+        Remove-Item -LiteralPath $OutFile -Force -ErrorAction SilentlyContinue
+        throw "Downloaded file is not a valid zip: $Url"
+    }
 }
 
 function Remove-TreeInsideInstallRoot([string]$Path) {
