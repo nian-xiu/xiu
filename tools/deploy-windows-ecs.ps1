@@ -10,6 +10,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$ScriptVersion = "2026-06-17.3"
 
 function Assert-Admin {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -74,6 +75,7 @@ function Expand-ZipFresh([string]$ZipFile, [string]$Destination) {
 }
 
 Assert-Admin
+Write-Host "SsmShop Windows ECS deploy script $ScriptVersion" -ForegroundColor Green
 
 $runtimeDir = Join-Path $InstallRoot "runtime"
 $downloadDir = Join-Path $InstallRoot "downloads"
@@ -89,6 +91,10 @@ Write-Step "Installing JDK 21"
 $jdkZip = Join-Path $downloadDir "jdk21.zip"
 $jdkExtract = Join-Path $runtimeDir "jdk21-extract"
 $jdkHome = Join-Path $runtimeDir "jdk-21"
+if (Test-Path $jdkZip) {
+    Write-Host "Refreshing JDK download to avoid stale partial archives: $jdkZip"
+    Remove-Item -LiteralPath $jdkZip -Force
+}
 Download-File "https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jdk/hotspot/normal/eclipse" $jdkZip
 if (-not (Test-Path (Join-Path $jdkHome "bin\java.exe"))) {
     Expand-ZipFresh $jdkZip $jdkExtract
