@@ -9,8 +9,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$ProgressPreference = "SilentlyContinue"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$ScriptVersion = "2026-06-18.1"
+$ScriptVersion = "2026-06-18.2"
 
 function Assert-Admin {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -39,7 +40,7 @@ function Test-ZipArchive([string]$Path) {
     }
 }
 
-function Download-File([string]$Url, [string]$OutFile) {
+function Download-File([string[]]$Urls, [string]$OutFile) {
     if (Test-Path $OutFile) {
         if ($OutFile.ToLowerInvariant().EndsWith(".zip") -and -not (Test-ZipArchive $OutFile)) {
             Write-Warning "Existing download is not a valid zip, deleting: $OutFile"
@@ -49,12 +50,27 @@ function Download-File([string]$Url, [string]$OutFile) {
             return
         }
     }
-    Write-Host "Downloading: $Url"
-    Invoke-WebRequest -Uri $Url -OutFile $OutFile -UseBasicParsing
-    if ($OutFile.ToLowerInvariant().EndsWith(".zip") -and -not (Test-ZipArchive $OutFile)) {
-        Remove-Item -LiteralPath $OutFile -Force -ErrorAction SilentlyContinue
-        throw "Downloaded file is not a valid zip: $Url"
+
+    $lastError = $null
+    foreach ($Url in $Urls) {
+        for ($attempt = 1; $attempt -le 3; $attempt++) {
+            try {
+                Write-Host "Downloading: $Url (attempt $attempt/3)"
+                Invoke-WebRequest -Uri $Url -OutFile $OutFile -UseBasicParsing -TimeoutSec 180
+                if ($OutFile.ToLowerInvariant().EndsWith(".zip") -and -not (Test-ZipArchive $OutFile)) {
+                    Remove-Item -LiteralPath $OutFile -Force -ErrorAction SilentlyContinue
+                    throw "Downloaded file is not a valid zip: $Url"
+                }
+                return
+            } catch {
+                $lastError = $_
+                Remove-Item -LiteralPath $OutFile -Force -ErrorAction SilentlyContinue
+                Write-Warning "Download failed: $($_.Exception.Message)"
+            }
+        }
     }
+
+    throw "Download failed after retries. Last error: $($lastError.Exception.Message)"
 }
 
 function Remove-TreeInsideInstallRoot([string]$Path) {
@@ -100,17 +116,22 @@ Write-Step "Installing JDK 21"
 $jdkZip = Join-Path $downloadDir "jdk21.zip"
 $jdkExtract = Join-Path $runtimeDir "jdk21-extract"
 $jdkHome = Join-Path $runtimeDir "jdk-21"
-if (Test-Path $jdkZip) {
-    Write-Host "Refreshing JDK download to avoid stale partial archives: $jdkZip"
-    Remove-Item -LiteralPath $jdkZip -Force
-}
-Download-File "https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jdk/hotspot/normal/eclipse" $jdkZip
 if (-not (Test-Path (Join-Path $jdkHome "bin\java.exe"))) {
+    if (Test-Path $jdkZip) {
+        Write-Host "Refreshing JDK download to avoid stale partial archives: $jdkZip"
+        Remove-Item -LiteralPath $jdkZip -Force
+    }
+    Download-File @(
+        "https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jdk/hotspot/normal/eclipse",
+        "https://aka.ms/download-jdk/microsoft-jdk-21-windows-x64.zip"
+    ) $jdkZip
     Expand-ZipFresh $jdkZip $jdkExtract
     $jdkFolder = Get-ChildItem $jdkExtract -Directory | Select-Object -First 1
     if (-not $jdkFolder) { throw "JDK archive did not contain a folder." }
     if (Test-Path $jdkHome) { Remove-Item -LiteralPath $jdkHome -Recurse -Force }
     Move-Item -LiteralPath $jdkFolder.FullName -Destination $jdkHome
+} else {
+    Write-Host "JDK already installed: $jdkHome"
 }
 $javaExe = Join-Path $jdkHome "bin\java.exe"
 $env:JAVA_HOME = $jdkHome
