@@ -11,7 +11,7 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$ScriptVersion = "2026-06-18.4"
+$ScriptVersion = "2026-06-18.5"
 
 function Assert-Admin {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -147,6 +147,46 @@ function Show-MySqlErrorLog([string]$DataDir) {
         }
 }
 
+function Test-PortListening([int]$LocalPort) {
+    return [bool](Get-NetTCPConnection -LocalPort $LocalPort -State Listen -ErrorAction SilentlyContinue)
+}
+
+function Start-MySqlFallbackProcess([string]$MysqldPath, [string]$DefaultsFile, [string]$LogDir, [int]$MySqlPort) {
+    if (Test-PortListening $MySqlPort) {
+        Write-Host "MySQL port $MySqlPort is already listening."
+        return
+    }
+
+    $runMysqlScript = Join-Path $InstallRoot "run-mysql.ps1"
+    $mysqlProcessLog = Join-Path $LogDir "mysql-process.log"
+    @"
+`$ErrorActionPreference = "Stop"
+& "$MysqldPath" "--defaults-file=$DefaultsFile" *>> "$mysqlProcessLog"
+"@ | Set-Content -LiteralPath $runMysqlScript -Encoding ASCII
+
+    $taskName = "SsmShopMySQLProcess"
+    Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+    $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$runMysqlScript`""
+    $trigger = New-ScheduledTaskTrigger -AtStartup
+    $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -RunLevel Highest
+    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
+    Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force | Out-Null
+    Start-ScheduledTask -TaskName $taskName
+
+    for ($i = 1; $i -le 30; $i++) {
+        Start-Sleep -Seconds 2
+        if (Test-PortListening $MySqlPort) {
+            Write-Host "MySQL is running through scheduled task fallback on port $MySqlPort." -ForegroundColor Green
+            return
+        }
+        Write-Host "Waiting for MySQL fallback process... $i/30"
+    }
+
+    Write-Warning "MySQL fallback process did not open port $MySqlPort. Log: $mysqlProcessLog"
+    Get-Content -LiteralPath $mysqlProcessLog -Tail 80 -ErrorAction SilentlyContinue
+    throw "MySQL could not be started as a Windows service or fallback process."
+}
+
 Assert-Admin
 Write-Host "SsmShop Windows ECS deploy script $ScriptVersion" -ForegroundColor Green
 
@@ -270,7 +310,9 @@ if ((Get-Service -Name $mysqlService).Status -ne "Running") {
         Start-Service $mysqlService
     } catch {
         Show-MySqlErrorLog $mysqlDataDir
-        throw
+        Write-Warning "Windows service startup failed; trying scheduled task fallback."
+        Remove-MySqlServiceIfExists $mysqlService $mysqld
+        Start-MySqlFallbackProcess $mysqld $mysqlIni $logsDir 3306
     }
     Start-Sleep -Seconds 8
 }
