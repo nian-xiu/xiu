@@ -11,7 +11,7 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$ScriptVersion = "2026-06-18.6"
+$ScriptVersion = "2026-06-18.7"
 
 function Assert-Admin {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -355,7 +355,7 @@ New-Item -ItemType Directory -Force -Path (Join-Path $appDir "uploads\products")
 $runScript = Join-Path $appDir "run-foreground.ps1"
 @"
 `$ErrorActionPreference = "Stop"
-`$env:DB_URL = "jdbc:mysql://localhost:3306/$DbName?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false&rewriteBatchedStatements=true"
+`$env:DB_URL = "jdbc:mysql://localhost:3306/${DbName}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false&rewriteBatchedStatements=true"
 `$env:DB_USERNAME = "$DbUsername"
 `$env:DB_PASSWORD = "$DbPassword"
 `$env:APP_PASSWORD_SALT = "$AppPasswordSalt"
