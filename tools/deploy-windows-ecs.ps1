@@ -11,7 +11,7 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$ScriptVersion = "2026-06-18.5"
+$ScriptVersion = "2026-06-18.6"
 
 function Assert-Admin {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -159,10 +159,38 @@ function Start-MySqlFallbackProcess([string]$MysqldPath, [string]$DefaultsFile, 
 
     $runMysqlScript = Join-Path $InstallRoot "run-mysql.ps1"
     $mysqlProcessLog = Join-Path $LogDir "mysql-process.log"
+    $mysqlProcessErrLog = Join-Path $LogDir "mysql-process.err.log"
     @"
 `$ErrorActionPreference = "Stop"
 & "$MysqldPath" "--defaults-file=$DefaultsFile" *>> "$mysqlProcessLog"
 "@ | Set-Content -LiteralPath $runMysqlScript -Encoding ASCII
+
+    Write-Host "Starting MySQL directly: $MysqldPath --defaults-file=$DefaultsFile"
+    Remove-Item -LiteralPath $mysqlProcessLog, $mysqlProcessErrLog -Force -ErrorAction SilentlyContinue
+    $process = Start-Process -FilePath $MysqldPath -ArgumentList "--defaults-file=$DefaultsFile" -WindowStyle Hidden -PassThru -RedirectStandardOutput $mysqlProcessLog -RedirectStandardError $mysqlProcessErrLog
+
+    for ($i = 1; $i -le 30; $i++) {
+        Start-Sleep -Seconds 2
+        if (Test-PortListening $MySqlPort) {
+            Write-Host "MySQL is running as background process $($process.Id) on port $MySqlPort." -ForegroundColor Green
+            break
+        }
+        if ($process.HasExited) {
+            Write-Warning "MySQL process exited early with code $($process.ExitCode). Log: $mysqlProcessLog"
+            Get-Content -LiteralPath $mysqlProcessLog -Tail 80 -ErrorAction SilentlyContinue
+            Get-Content -LiteralPath $mysqlProcessErrLog -Tail 80 -ErrorAction SilentlyContinue
+            Show-MySqlErrorLog (Split-Path -Parent $DefaultsFile | Join-Path -ChildPath "mysql-data")
+            throw "MySQL background process exited before opening port $MySqlPort."
+        }
+        Write-Host "Waiting for direct MySQL process... $i/30"
+    }
+
+    if (-not (Test-PortListening $MySqlPort)) {
+        Write-Warning "Direct MySQL process did not open port $MySqlPort. Log: $mysqlProcessLog"
+        Get-Content -LiteralPath $mysqlProcessLog -Tail 80 -ErrorAction SilentlyContinue
+        Get-Content -LiteralPath $mysqlProcessErrLog -Tail 80 -ErrorAction SilentlyContinue
+        throw "MySQL direct process did not open port $MySqlPort."
+    }
 
     $taskName = "SsmShopMySQLProcess"
     Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
@@ -171,20 +199,7 @@ function Start-MySqlFallbackProcess([string]$MysqldPath, [string]$DefaultsFile, 
     $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -RunLevel Highest
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
     Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force | Out-Null
-    Start-ScheduledTask -TaskName $taskName
-
-    for ($i = 1; $i -le 30; $i++) {
-        Start-Sleep -Seconds 2
-        if (Test-PortListening $MySqlPort) {
-            Write-Host "MySQL is running through scheduled task fallback on port $MySqlPort." -ForegroundColor Green
-            return
-        }
-        Write-Host "Waiting for MySQL fallback process... $i/30"
-    }
-
-    Write-Warning "MySQL fallback process did not open port $MySqlPort. Log: $mysqlProcessLog"
-    Get-Content -LiteralPath $mysqlProcessLog -Tail 80 -ErrorAction SilentlyContinue
-    throw "MySQL could not be started as a Windows service or fallback process."
+    Write-Host "Registered MySQL fallback startup task: $taskName"
 }
 
 Assert-Admin
@@ -291,31 +306,8 @@ if (-not (Test-MySqlDataDirectory $mysqlDataDir)) {
     Invoke-NativeChecked $mysqld @("--defaults-file=$mysqlIni", "--initialize-insecure") "MySQL data directory initialization failed."
 }
 
-$serviceImagePath = Get-MySqlServiceImagePath $mysqlService
-if ($serviceImagePath -and ($serviceImagePath -notlike "*$mysqlIni*")) {
-    Write-Warning "Existing MySQL service does not reference mysql.ini, recreating it: $serviceImagePath"
-    Remove-MySqlServiceIfExists $mysqlService $mysqld
-}
-
-if (-not (Get-Service -Name $mysqlService -ErrorAction SilentlyContinue)) {
-    Install-MySqlService $mysqlService $mysqld $mysqlIni
-}
-
-if (-not (Get-Service -Name $mysqlService -ErrorAction SilentlyContinue)) {
-    throw "MySQL service '$mysqlService' was not found after registration. Try running: `"$mysqld`" --remove $mysqlService"
-}
-
-if ((Get-Service -Name $mysqlService).Status -ne "Running") {
-    try {
-        Start-Service $mysqlService
-    } catch {
-        Show-MySqlErrorLog $mysqlDataDir
-        Write-Warning "Windows service startup failed; trying scheduled task fallback."
-        Remove-MySqlServiceIfExists $mysqlService $mysqld
-        Start-MySqlFallbackProcess $mysqld $mysqlIni $logsDir 3306
-    }
-    Start-Sleep -Seconds 8
-}
+Remove-MySqlServiceIfExists $mysqlService $mysqld
+Start-MySqlFallbackProcess $mysqld $mysqlIni $logsDir 3306
 
 $rootPasswordWorks = $false
 try {
