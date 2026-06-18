@@ -11,7 +11,7 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$ScriptVersion = "2026-06-18.3"
+$ScriptVersion = "2026-06-18.4"
 
 function Assert-Admin {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -118,6 +118,21 @@ function Remove-MySqlServiceIfExists([string]$ServiceName, [string]$MysqldPath) 
     if ($LASTEXITCODE -ne 0) {
         & sc.exe delete $ServiceName | Out-Null
     }
+    Start-Sleep -Seconds 2
+}
+
+function Get-MySqlServiceImagePath([string]$ServiceName) {
+    $serviceKey = "HKLM:\SYSTEM\CurrentControlSet\Services\$ServiceName"
+    if (-not (Test-Path $serviceKey)) {
+        return $null
+    }
+    return (Get-ItemProperty -LiteralPath $serviceKey -Name ImagePath -ErrorAction SilentlyContinue).ImagePath
+}
+
+function Install-MySqlService([string]$ServiceName, [string]$MysqldPath, [string]$DefaultsFile) {
+    $binPath = "`"$MysqldPath`" --defaults-file=`"$DefaultsFile`" $ServiceName"
+    Invoke-NativeChecked "sc.exe" @("create", $ServiceName, "binPath=", $binPath, "start=", "auto", "DisplayName=", "SsmShop MySQL") "MySQL service registration failed."
+    & sc.exe failure $ServiceName reset= 60 actions= restart/60000/restart/60000/""/60000 | Out-Null
     Start-Sleep -Seconds 2
 }
 
@@ -236,9 +251,14 @@ if (-not (Test-MySqlDataDirectory $mysqlDataDir)) {
     Invoke-NativeChecked $mysqld @("--defaults-file=$mysqlIni", "--initialize-insecure") "MySQL data directory initialization failed."
 }
 
+$serviceImagePath = Get-MySqlServiceImagePath $mysqlService
+if ($serviceImagePath -and ($serviceImagePath -notlike "*$mysqlIni*")) {
+    Write-Warning "Existing MySQL service does not reference mysql.ini, recreating it: $serviceImagePath"
+    Remove-MySqlServiceIfExists $mysqlService $mysqld
+}
+
 if (-not (Get-Service -Name $mysqlService -ErrorAction SilentlyContinue)) {
-    Invoke-NativeChecked $mysqld @("--install", $mysqlService, "--defaults-file=$mysqlIni") "MySQL service registration failed."
-    Start-Sleep -Seconds 2
+    Install-MySqlService $mysqlService $mysqld $mysqlIni
 }
 
 if (-not (Get-Service -Name $mysqlService -ErrorAction SilentlyContinue)) {
