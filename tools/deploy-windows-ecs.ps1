@@ -10,7 +10,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$ScriptVersion = "2026-06-17.3"
+$ScriptVersion = "2026-06-18.1"
 
 function Assert-Admin {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -74,6 +74,15 @@ function Expand-ZipFresh([string]$ZipFile, [string]$Destination) {
     Expand-Archive -LiteralPath $ZipFile -DestinationPath $Destination -Force
 }
 
+function Invoke-NativeChecked([string]$FilePath, [string[]]$Arguments, [string]$FailureMessage) {
+    Write-Host "$FilePath $($Arguments -join ' ')"
+    & $FilePath @Arguments
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+        throw "$FailureMessage Exit code: $exitCode"
+    }
+}
+
 Assert-Admin
 Write-Host "SsmShop Windows ECS deploy script $ScriptVersion" -ForegroundColor Green
 
@@ -104,7 +113,9 @@ if (-not (Test-Path (Join-Path $jdkHome "bin\java.exe"))) {
     Move-Item -LiteralPath $jdkFolder.FullName -Destination $jdkHome
 }
 $javaExe = Join-Path $jdkHome "bin\java.exe"
-& $javaExe -version
+$env:JAVA_HOME = $jdkHome
+$env:Path = "$jdkHome\bin;$env:Path"
+Invoke-NativeChecked $javaExe @("-version") "Java verification failed."
 
 Write-Step "Installing Maven"
 $mavenVersion = "3.9.16"
@@ -120,7 +131,9 @@ if (-not (Test-Path (Join-Path $mavenHome "bin\mvn.cmd"))) {
     Move-Item -LiteralPath $mavenFolder.FullName -Destination $mavenHome
 }
 $mvnCmd = Join-Path $mavenHome "bin\mvn.cmd"
-& $mvnCmd -version
+$env:MAVEN_HOME = $mavenHome
+$env:Path = "$mavenHome\bin;$env:Path"
+Invoke-NativeChecked $mvnCmd @("-version") "Maven verification failed."
 
 Write-Step "Installing MySQL 8.4"
 $mysqlVersion = "8.4.10"
@@ -160,11 +173,16 @@ default-character-set=utf8mb4
 
 if (-not (Test-Path $mysqlDataDir)) {
     New-Item -ItemType Directory -Force -Path $mysqlDataDir | Out-Null
-    & $mysqld --defaults-file="$mysqlIni" --initialize-insecure
+    Invoke-NativeChecked $mysqld @("--defaults-file=$mysqlIni", "--initialize-insecure") "MySQL data directory initialization failed."
 }
 
 if (-not (Get-Service -Name $mysqlService -ErrorAction SilentlyContinue)) {
-    & $mysqld --install $mysqlService --defaults-file="$mysqlIni"
+    Invoke-NativeChecked $mysqld @("--install", $mysqlService, "--defaults-file=$mysqlIni") "MySQL service registration failed."
+    Start-Sleep -Seconds 2
+}
+
+if (-not (Get-Service -Name $mysqlService -ErrorAction SilentlyContinue)) {
+    throw "MySQL service '$mysqlService' was not found after registration. Try running: `"$mysqld`" --remove $mysqlService"
 }
 
 if ((Get-Service -Name $mysqlService).Status -ne "Running") {
@@ -174,7 +192,7 @@ if ((Get-Service -Name $mysqlService).Status -ne "Running") {
 
 $rootPasswordWorks = $false
 try {
-    & $mysqlAdmin -u root "-p$DbPassword" ping | Out-Null
+    & $mysqlAdmin -u root "-p$DbPassword" ping 2>$null | Out-Null
     $rootPasswordWorks = $true
 } catch {
     $rootPasswordWorks = $false
@@ -182,7 +200,7 @@ try {
 
 if (-not $rootPasswordWorks) {
     try {
-        & $mysqlAdmin -u root password $DbPassword
+        Invoke-NativeChecked $mysqlAdmin @("-u", "root", "password", $DbPassword) "Could not set MySQL root password automatically."
     } catch {
         Write-Warning "Could not set MySQL root password automatically. If MySQL was previously initialized, make sure the supplied password is correct."
     }
@@ -190,7 +208,7 @@ if (-not $rootPasswordWorks) {
 
 Write-Step "Creating database"
 $createDbSql = "CREATE DATABASE IF NOT EXISTS $DbName DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
-& $mysql -u $DbUsername "-p$DbPassword" -e $createDbSql
+Invoke-NativeChecked $mysql @("-u", $DbUsername, "-p$DbPassword", "-e", $createDbSql) "Database creation failed."
 
 Write-Step "Downloading project source"
 $repoZip = Join-Path $downloadDir "xiu-main.zip"
@@ -205,7 +223,7 @@ Push-Location $repoRoot.FullName
 try {
     $env:JAVA_HOME = $jdkHome
     $env:Path = "$jdkHome\bin;$mavenHome\bin;$env:Path"
-    & $mvnCmd package -DskipTests
+    Invoke-NativeChecked $mvnCmd @("package", "-DskipTests") "Maven build failed."
 } finally {
     Pop-Location
 }
