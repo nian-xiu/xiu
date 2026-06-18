@@ -11,7 +11,7 @@ param(
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$ScriptVersion = "2026-06-18.2"
+$ScriptVersion = "2026-06-18.3"
 
 function Assert-Admin {
     $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
@@ -97,6 +97,39 @@ function Invoke-NativeChecked([string]$FilePath, [string[]]$Arguments, [string]$
     if ($exitCode -ne 0) {
         throw "$FailureMessage Exit code: $exitCode"
     }
+}
+
+function Test-MySqlDataDirectory([string]$Path) {
+    return (Test-Path (Join-Path $Path "mysql"))
+}
+
+function Remove-MySqlServiceIfExists([string]$ServiceName, [string]$MysqldPath) {
+    $service = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
+    if (-not $service) {
+        return
+    }
+
+    if ($service.Status -ne "Stopped") {
+        Stop-Service -Name $ServiceName -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 2
+    }
+
+    & $MysqldPath --remove $ServiceName 2>$null | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        & sc.exe delete $ServiceName | Out-Null
+    }
+    Start-Sleep -Seconds 2
+}
+
+function Show-MySqlErrorLog([string]$DataDir) {
+    Get-ChildItem -LiteralPath $DataDir -Filter "*.err" -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1 |
+        ForEach-Object {
+            Write-Host ""
+            Write-Warning "Latest MySQL error log: $($_.FullName)"
+            Get-Content -LiteralPath $_.FullName -Tail 80 -ErrorAction SilentlyContinue
+        }
 }
 
 Assert-Admin
@@ -192,7 +225,13 @@ default-character-set=utf8mb4
 "@ | Set-Content -LiteralPath $mysqlIni -Encoding ASCII
 }
 
-if (-not (Test-Path $mysqlDataDir)) {
+if ((Test-Path $mysqlDataDir) -and -not (Test-MySqlDataDirectory $mysqlDataDir)) {
+    Write-Warning "MySQL data directory exists but is not initialized correctly, rebuilding: $mysqlDataDir"
+    Remove-MySqlServiceIfExists $mysqlService $mysqld
+    Remove-TreeInsideInstallRoot $mysqlDataDir
+}
+
+if (-not (Test-MySqlDataDirectory $mysqlDataDir)) {
     New-Item -ItemType Directory -Force -Path $mysqlDataDir | Out-Null
     Invoke-NativeChecked $mysqld @("--defaults-file=$mysqlIni", "--initialize-insecure") "MySQL data directory initialization failed."
 }
@@ -207,7 +246,12 @@ if (-not (Get-Service -Name $mysqlService -ErrorAction SilentlyContinue)) {
 }
 
 if ((Get-Service -Name $mysqlService).Status -ne "Running") {
-    Start-Service $mysqlService
+    try {
+        Start-Service $mysqlService
+    } catch {
+        Show-MySqlErrorLog $mysqlDataDir
+        throw
+    }
     Start-Sleep -Seconds 8
 }
 
