@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${product.name} + ' - 心怡商城'">商品详情</title>
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
-    <link rel="stylesheet" th:href="@{/css/app.css(v='20260625a')}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260629c')}">
 </head>
 <body>
 <div th:replace="~{fragments/layout :: header}"></div>
@@ -66,9 +66,14 @@
 <main class="container" th:if="${product == null}">
     <div class="panel">商品不存在或已被删除。</div>
 </main>
-<script th:src="@{/js/app.js(v='20260607a')}"></script>
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/app.js(v='20260629c')}"></script>
 </body>
 </html>
+
+
+
+
 
 
 

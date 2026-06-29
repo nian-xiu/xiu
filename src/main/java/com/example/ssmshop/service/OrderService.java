@@ -29,6 +29,18 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 public class OrderService {
+    private static final String STATUS_ON_SALE = "ON_SALE";
+    private static final String STATUS_PAID = "PAID";
+    private static final String STATUS_SHIPPED = "SHIPPED";
+    private static final String STATUS_COMPLETED = "COMPLETED";
+    private static final String STATUS_REFUND_REQUESTED = "REFUND_REQUESTED";
+    private static final String STATUS_REFUNDED = "REFUNDED";
+    private static final String STATUS_CANCELLED = "CANCELLED";
+    private static final String PAYMENT_ONLINE = "ONLINE";
+    private static final String DISCOUNT_COINS = "COINS";
+    private static final String DISCOUNT_COUPON = "COUPON";
+    private static final String COUPON_AMOUNT_OFF = "AMOUNT_OFF";
+
     private final OrderMapper orderMapper;
     private final OrderItemMapper orderItemMapper;
     private final ProductMapper productMapper;
@@ -66,14 +78,16 @@ public class OrderService {
     }
 
     public CartSummary buyNowSummary(Long productId, int quantity) {
-        Product product = productMapper.findById(productId);
-        if (product == null || !"ON_SALE".equals(product.getStatus())) {
-            throw new IllegalArgumentException("商品不存在或已下架");
+        Product product = requireOnSaleProduct(productId);
+        int stock = availableStock(product);
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("商品数量必须大于 0");
         }
-        int safeQuantity = Math.max(1, Math.min(quantity, product.getStock()));
-        if (safeQuantity <= 0) {
+        if (stock <= 0) {
             throw new IllegalArgumentException("商品库存不足");
         }
+
+        int safeQuantity = Math.min(quantity, stock);
         CartLine line = new CartLine();
         line.setProduct(product);
         line.setQuantity(safeQuantity);
@@ -109,7 +123,7 @@ public class OrderService {
         Long usedCouponId = null;
         BigDecimal couponDiscount = BigDecimal.ZERO;
 
-        if ("COINS".equals(discountType)) {
+        if (DISCOUNT_COINS.equals(discountType)) {
             User user = userMapper.findById(userId);
             int availableCoins = user.getCoins() == null ? 0 : user.getCoins();
             int maxUsableCoins = originalAmount.multiply(BigDecimal.valueOf(100)).intValue();
@@ -118,13 +132,13 @@ public class OrderService {
                 coinDiscount = BigDecimal.valueOf(coinUsed).divide(BigDecimal.valueOf(100));
                 totalAmount = originalAmount.subtract(coinDiscount);
             }
-        } else if ("COUPON".equals(discountType) && couponId != null) {
+        } else if (DISCOUNT_COUPON.equals(discountType) && couponId != null) {
             UserCoupon coupon = userCouponMapper.findUnusedByIdAndUserId(couponId, userId);
             if (coupon == null) {
                 throw new IllegalArgumentException("优惠券不可用");
             }
             usedCouponId = coupon.getId();
-            if ("AMOUNT_OFF".equals(coupon.getCouponType())) {
+            if (COUPON_AMOUNT_OFF.equals(coupon.getCouponType())) {
                 BigDecimal thresholdAmount = coupon.getThresholdAmount() == null ? BigDecimal.ZERO : coupon.getThresholdAmount();
                 if (originalAmount.compareTo(thresholdAmount) < 0) {
                     throw new IllegalArgumentException("购物金额未满足满减门槛");
@@ -154,8 +168,8 @@ public class OrderService {
         order.setEstimatedDeliveryDays(ThreadLocalRandom.current().nextInt(3, 8));
         order.setAutoShipAt(LocalDateTime.now().plusHours(24));
         order.setPaidAt(LocalDateTime.now());
-        order.setStatus("PAID");
-        order.setPaymentMethod(paymentMethod == null || paymentMethod.isBlank() ? "ONLINE" : paymentMethod);
+        order.setStatus(STATUS_PAID);
+        order.setPaymentMethod(paymentMethod == null || paymentMethod.isBlank() ? PAYMENT_ONLINE : paymentMethod);
         order.setRemark(remark);
         orderMapper.insert(order);
 
@@ -213,7 +227,7 @@ public class OrderService {
         if (!isValidTransition(order.getStatus(), status)) {
             throw new IllegalArgumentException("订单状态流转不合法");
         }
-        orderMapper.updateStatus(id, status);
+        orderMapper.updateStatus(id, status, STATUS_COMPLETED.equals(status) ? generatePickupCode() : null);
     }
 
     @Transactional
@@ -222,16 +236,16 @@ public class OrderService {
         if (order == null || !order.isRefundable()) {
             throw new IllegalArgumentException("当前订单暂不能申请退款");
         }
-        orderMapper.updateStatusByUserId(orderId, userId, "REFUND_REQUESTED");
+        orderMapper.updateStatusByUserId(orderId, userId, STATUS_REFUND_REQUESTED);
     }
 
     @Transactional
     public void confirmReceipt(Long orderId, Long userId) {
         Order order = orderMapper.findByIdAndUserId(orderId, userId);
         if (order == null || !order.isReceivable()) {
-            throw new IllegalArgumentException("订单尚未到达，暂不能确认收货");
+            throw new IllegalArgumentException("订单尚未送达，暂不能确认收货");
         }
-        orderMapper.updateStatusByUserId(orderId, userId, "COMPLETED");
+        orderMapper.confirmReceiptByUserId(orderId, userId);
     }
 
     private OrderDetail buildDetail(Order order) {
@@ -252,10 +266,19 @@ public class OrderService {
                 if (order.getAutoShipAt() != null && LocalDateTime.now().isBefore(order.getAutoShipAt())) {
                     continue;
                 }
-                if (!"PAID".equals(order.getStatus()) || order.getShippedAt() != null) {
+                if (!STATUS_PAID.equals(order.getStatus()) || order.getShippedAt() != null) {
                     continue;
                 }
-                orderMapper.updateStatus(order.getId(), "SHIPPED");
+                orderMapper.updateStatus(order.getId(), STATUS_SHIPPED, null);
+            }
+            for (Order order : orderMapper.findPendingDeliveryCompletion()) {
+                if (!STATUS_SHIPPED.equals(order.getStatus())) {
+                    continue;
+                }
+                orderMapper.updateStatus(order.getId(), STATUS_COMPLETED, generatePickupCode());
+            }
+            for (Order order : orderMapper.findPendingAutoReceive()) {
+                orderMapper.confirmReceipt(order.getId());
             }
         } catch (DataAccessException ex) {
             return;
@@ -267,10 +290,10 @@ public class OrderService {
             return true;
         }
         return switch (currentStatus) {
-            case "PAID" -> "SHIPPED".equals(targetStatus) || "REFUND_REQUESTED".equals(targetStatus) || "CANCELLED".equals(targetStatus);
-            case "SHIPPED" -> "COMPLETED".equals(targetStatus) || "REFUND_REQUESTED".equals(targetStatus);
-            case "REFUND_REQUESTED" -> "REFUNDED".equals(targetStatus) || "SHIPPED".equals(targetStatus);
-            case "REFUNDED", "COMPLETED", "CANCELLED" -> false;
+            case STATUS_PAID -> STATUS_SHIPPED.equals(targetStatus) || STATUS_REFUND_REQUESTED.equals(targetStatus) || STATUS_CANCELLED.equals(targetStatus);
+            case STATUS_SHIPPED -> STATUS_COMPLETED.equals(targetStatus) || STATUS_REFUND_REQUESTED.equals(targetStatus);
+            case STATUS_REFUND_REQUESTED -> STATUS_REFUNDED.equals(targetStatus) || STATUS_SHIPPED.equals(targetStatus);
+            case STATUS_REFUNDED, STATUS_COMPLETED, STATUS_CANCELLED -> false;
             default -> false;
         };
     }
@@ -278,5 +301,25 @@ public class OrderService {
     private String generateOrderNo() {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         return "SSM" + timestamp + ThreadLocalRandom.current().nextInt(1000, 9999);
+    }
+
+    private String generatePickupCode() {
+        int station = ThreadLocalRandom.current().nextInt(1, 100);
+        int shelf = ThreadLocalRandom.current().nextInt(1, 10);
+        int code = ThreadLocalRandom.current().nextInt(1000, 10000);
+        return String.format("A%02d-%d-%04d", station, shelf, code);
+    }
+
+    private Product requireOnSaleProduct(Long productId) {
+        Product product = productMapper.findById(productId);
+        if (product == null || !STATUS_ON_SALE.equals(product.getStatus())) {
+            throw new IllegalArgumentException("商品不存在或已下架");
+        }
+        return product;
+    }
+
+    private int availableStock(Product product) {
+        Integer stock = product.getStock();
+        return stock == null ? 0 : stock;
     }
 }

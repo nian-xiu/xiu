@@ -49,7 +49,15 @@
     </select>
 
     <select id="sumRevenue" resultType="java.math.BigDecimal">
-        SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status IN ('PAID', 'SHIPPED', 'COMPLETED')
+        SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = 'COMPLETED' AND receipt_confirmed_at IS NOT NULL
+    </select>
+
+    <select id="sumPendingSettlement" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status IN ('PAID', 'SHIPPED') OR (status = 'COMPLETED' AND receipt_confirmed_at IS NULL)
+    </select>
+
+    <select id="countConfirmedReceipts" resultType="long">
+        SELECT COUNT(*) FROM orders WHERE status = 'COMPLETED' AND receipt_confirmed_at IS NOT NULL
     </select>
 
     <select id="findPendingAutoShip" resultType="Order">
@@ -63,19 +71,56 @@
         ORDER BY o.auto_ship_at ASC
     </select>
 
+    <select id="findPendingDeliveryCompletion" resultType="Order">
+        SELECT o.*, u.username AS username
+        FROM orders o
+        JOIN users u ON u.id = o.user_id
+        WHERE o.status = 'SHIPPED'
+          AND o.shipped_at IS NOT NULL
+          AND o.shipped_at &lt;= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL o.estimated_delivery_days DAY)
+        ORDER BY o.shipped_at ASC
+    </select>
+
     <update id="updateStatus">
         UPDATE orders
         SET status = #{status},
             paid_at = CASE WHEN #{status} = 'PAID' THEN COALESCE(paid_at, CURRENT_TIMESTAMP) ELSE paid_at END,
             shipped_at = CASE WHEN #{status} = 'SHIPPED' THEN COALESCE(shipped_at, CURRENT_TIMESTAMP) ELSE shipped_at END,
-            completed_at = CASE WHEN #{status} = 'COMPLETED' THEN COALESCE(completed_at, CURRENT_TIMESTAMP) ELSE completed_at END
+            completed_at = CASE WHEN #{status} = 'COMPLETED' THEN COALESCE(completed_at, CURRENT_TIMESTAMP) ELSE completed_at END,
+            pickup_code = CASE WHEN #{status} = 'COMPLETED' THEN COALESCE(pickup_code, #{pickupCode}) ELSE pickup_code END
         WHERE id = #{id}
     </update>
 
     <update id="updateStatusByUserId">
         UPDATE orders
-        SET status = #{status},
-            completed_at = CASE WHEN #{status} = 'COMPLETED' THEN COALESCE(completed_at, CURRENT_TIMESTAMP) ELSE completed_at END
+        SET status = #{status}
         WHERE id = #{id} AND user_id = #{userId}
+    </update>
+
+    <update id="confirmReceiptByUserId">
+        UPDATE orders
+        SET receipt_confirmed_at = CURRENT_TIMESTAMP
+        WHERE id = #{id} AND user_id = #{userId}
+          AND status = 'COMPLETED'
+          AND receipt_confirmed_at IS NULL
+    </update>
+
+    <select id="findPendingAutoReceive" resultType="Order">
+        SELECT o.*, u.username AS username
+        FROM orders o
+        JOIN users u ON u.id = o.user_id
+        WHERE o.status = 'COMPLETED'
+          AND o.receipt_confirmed_at IS NULL
+          AND o.completed_at IS NOT NULL
+          AND o.completed_at &lt;= DATE_SUB(CURRENT_TIMESTAMP, INTERVAL 7 DAY)
+        ORDER BY o.completed_at ASC
+    </select>
+
+    <update id="confirmReceipt">
+        UPDATE orders
+        SET receipt_confirmed_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'COMPLETED'
+          AND receipt_confirmed_at IS NULL
     </update>
 </mapper>

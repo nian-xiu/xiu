@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>商品表单 - 心怡商城</title>
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
-    <link rel="stylesheet" th:href="@{/css/app.css(v='20260625a')}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260629c')}">
 </head>
 <body>
 <div th:replace="~{fragments/layout :: header}"></div>
@@ -16,7 +16,12 @@
         <form th:action="${action}" th:object="${productForm}" method="post" enctype="multipart/form-data" class="form-grid">
             <div class="field">
                 <label>商品名称</label>
-                <input th:field="*{name}">
+                <textarea class="compact-textarea product-name-editor"
+                          th:field="*{name}"
+                          rows="2"
+                          maxlength="120"
+                          data-max-lines="3"
+                          placeholder="商品名较长时可换行预览，最多三行；保存后会自动整理为空格"></textarea>
                 <span class="error-text" th:errors="*{name}"></span>
             </div>
             <div class="field">
@@ -81,9 +86,14 @@
         </form>
     </section>
 </main>
-<script th:src="@{/js/app.js(v='20260607a')}"></script>
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/app.js(v='20260629c')}"></script>
 </body>
 </html>
+
+
+
+
 
 
 

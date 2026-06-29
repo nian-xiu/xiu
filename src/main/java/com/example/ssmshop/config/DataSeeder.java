@@ -23,7 +23,7 @@ import java.sql.Statement;
 @Component
 public class DataSeeder {
     private static final Logger LOG = LoggerFactory.getLogger(DataSeeder.class);
-    private static final String MIGRATION_VERSION = "20260607-polish";
+    private static final String MIGRATION_VERSION = "20260629-fulfillment-b";
 
     private final DataSource dataSource;
 
@@ -101,6 +101,9 @@ public class DataSeeder {
         runSilently(connection, "UPDATE coupon_codes SET coupon_quantity = 1 WHERE coupon_quantity IS NULL OR coupon_quantity < 1");
         runSilently(connection, "ALTER TABLE orders ADD COLUMN estimated_delivery_days INT NOT NULL DEFAULT 3");
         runSilently(connection, "ALTER TABLE orders ADD COLUMN auto_ship_at DATETIME");
+        runSilently(connection, "ALTER TABLE orders ADD COLUMN pickup_code VARCHAR(20)");
+        runSilently(connection, "ALTER TABLE orders ADD COLUMN receipt_confirmed_at DATETIME");
+        runSilently(connection, "UPDATE orders SET pickup_code = CONCAT('A', LPAD(MOD(id, 90) + 10, 2, '0'), '-', MOD(id, 9) + 1, '-', LPAD(MOD(id * 7919, 9000) + 1000, 4, '0')) WHERE status = 'COMPLETED' AND (pickup_code IS NULL OR pickup_code = '')");
         runSilently(connection, "CREATE TABLE IF NOT EXISTS announcements (id BIGINT PRIMARY KEY AUTO_INCREMENT, title VARCHAR(120) NOT NULL, summary VARCHAR(255), content TEXT NOT NULL, category VARCHAR(20) NOT NULL DEFAULT 'GENERAL', status VARCHAR(20) NOT NULL DEFAULT 'DRAFT', pinned BOOLEAN NOT NULL DEFAULT FALSE, related_campaign_id BIGINT, published_at DATETIME, expires_at DATETIME, created_by BIGINT, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, INDEX idx_announcements_status_pinned (status, pinned), INDEX idx_announcements_published_at (published_at))");
         runSilently(connection, "CREATE INDEX idx_products_status_stock ON products (status, stock)");
         runSilently(connection, "CREATE INDEX idx_products_created_at ON products (created_at)");

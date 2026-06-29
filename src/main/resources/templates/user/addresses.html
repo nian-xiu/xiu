@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>收货地址 - 心怡商城</title>
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
-    <link rel="stylesheet" th:href="@{/css/app.css(v='20260625a')}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260629c')}">
 </head>
 <body>
 <div th:replace="~{fragments/layout :: header}"></div>
@@ -33,9 +33,14 @@
     </table>
     <div class="panel" th:if="${#lists.isEmpty(addresses)}">还没有收货地址。</div>
 </main>
-<script th:src="@{/js/app.js(v='20260607a')}"></script>
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/app.js(v='20260629c')}"></script>
 </body>
 </html>
+
+
+
+
 
 
 

@@ -30,11 +30,14 @@ public class AdminService {
         stats.setPaidOrderCount(orderMapper.countByStatus("PAID"));
         stats.setShippedOrderCount(orderMapper.countByStatus("SHIPPED"));
         stats.setCompletedOrderCount(orderMapper.countByStatus("COMPLETED"));
+        stats.setConfirmedReceiptCount(orderMapper.countConfirmedReceipts());
         stats.setUserCount(userMapper.countCustomers());
         BigDecimal revenue = orderMapper.sumRevenue();
         stats.setRevenue(revenue == null ? BigDecimal.ZERO : revenue);
-        if (stats.getOrderCount() > 0) {
-            stats.setAverageOrderAmount(stats.getRevenue().divide(BigDecimal.valueOf(stats.getOrderCount()), 2, RoundingMode.HALF_UP));
+        BigDecimal pendingSettlement = orderMapper.sumPendingSettlement();
+        stats.setPendingSettlement(pendingSettlement == null ? BigDecimal.ZERO : pendingSettlement);
+        if (stats.getConfirmedReceiptCount() > 0) {
+            stats.setAverageOrderAmount(stats.getRevenue().divide(BigDecimal.valueOf(stats.getConfirmedReceiptCount()), 2, RoundingMode.HALF_UP));
         }
         return stats;
     }

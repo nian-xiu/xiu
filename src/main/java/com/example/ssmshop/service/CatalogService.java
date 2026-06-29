@@ -71,7 +71,7 @@ public class CatalogService {
         Product product = new Product();
         product.setId(form.getId());
         product.setCategoryId(form.getCategoryId());
-        product.setName(form.getName());
+        product.setName(normalizeProductName(form.getName()));
         product.setSubtitle(form.getSubtitle());
         product.setDescription(form.getDescription());
         product.setPrice(form.getPrice());
@@ -85,6 +85,10 @@ public class CatalogService {
         } else {
             productMapper.update(product);
         }
+    }
+
+    private String normalizeProductName(String name) {
+        return name == null ? null : name.replaceAll("\\s+", " ").trim();
     }
 
     public ProductForm toForm(Product product) {

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的订单 - 心怡商城</title>
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
-    <link rel="stylesheet" th:href="@{/css/app.css(v='20260625a')}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260629c')}">
 </head>
 <body>
 <div th:replace="~{fragments/layout :: header}"></div>
@@ -22,17 +22,21 @@
                     <strong th:text="${order.orderNo}">订单号</strong>
                     <p class="muted" th:text="${#temporals.format(order.createdAt, 'yyyy-MM-dd HH:mm')}">下单时间</p>
                 </div>
-                <span class="badge" th:text="${order.statusLabel}">状态</span>
-                <span class="badge" th:text="${order.deliveryText}">配送</span>
+                <span class="badge badge-order-state"
+                      th:classappend="${order.receiptConfirmed} ? 'is-received' : (${order.status == 'COMPLETED'} ? 'is-pending' : '')"
+                      th:text="${order.statusLabel}">状态</span>
             </div>
             <div class="order-progress">
                 <span th:classappend="${order.status == 'PAID' or order.status == 'SHIPPED' or order.status == 'COMPLETED'} ? 'is-active' : ''">已支付</span>
                 <span th:classappend="${order.status == 'SHIPPED' or order.status == 'COMPLETED'} ? 'is-active' : ''">运输中</span>
-                <span th:classappend="${order.status == 'COMPLETED'} ? 'is-active' : ''">已完成</span>
+                <span th:classappend="${order.status == 'COMPLETED'} ? (${order.receiptConfirmed} ? 'is-active is-received' : 'is-active is-pending-finish') : ''"
+                      th:text="${order.receiptConfirmed} ? '已完成' : '待完成'">待完成</span>
             </div>
             <div class="summary-bar">
                 <div>
                     <span class="muted" th:text="${order.deliveryText}">预计送达</span>
+                    <span class="pickup-inline" th:if="${!order.receiptConfirmed and !#strings.isEmpty(order.pickupCodeText)}" th:text="${order.pickupCodeText}">取件码</span>
+                    <span class="muted auto-receive-inline" th:if="${!#strings.isEmpty(order.autoReceiveText)}" th:text="${order.autoReceiveText}">自动确认</span>
                     <strong class="price" th:text="'¥' + ${order.totalAmount}">¥0</strong>
                 </div>
                 <a class="button" th:href="@{/orders/{id}(id=${order.id})}">查看订单状态</a>
@@ -41,9 +45,14 @@
     </div>
     <div class="panel" th:if="${#lists.isEmpty(orders)}">还没有订单，去挑几件喜欢的商品吧。</div>
 </main>
-<script th:src="@{/js/app.js(v='20260607a')}"></script>
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/app.js(v='20260629c')}"></script>
 </body>
 </html>
+
+
+
+
 
 
 

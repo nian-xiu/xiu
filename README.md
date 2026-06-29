@@ -1,4 +1,4 @@
-# 心悦商城
+﻿# 心悦商城
 
 基于 Spring Boot 3、Spring MVC、MyBatis 和 Thymeleaf 的在线商城演示项目，内嵌 Undertow，无需额外部署 Tomcat。
 

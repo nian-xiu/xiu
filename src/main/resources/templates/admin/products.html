@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>商品管理 - 心怡商城</title>
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
-    <link rel="stylesheet" th:href="@{/css/app.css(v='20260625a')}">
+    <link rel="stylesheet" th:href="@{/css/app.css(v='20260629c')}">
 </head>
 <body>
 <div th:replace="~{fragments/layout :: header}"></div>
@@ -48,30 +48,42 @@
             <div class="field"><label>最高价</label><input type="number" name="maxPrice" th:value="${filter.maxPrice}"></div>
             <button type="submit">筛选</button>
         </form>
-        <table class="table">
+        <table class="table admin-products-table">
             <thead><tr><th>商品</th><th>分类</th><th>价格</th><th>库存</th><th>销量</th><th>状态</th><th>操作</th></tr></thead>
             <tbody>
             <tr th:each="product : ${products}">
-                <td class="cart-product"><img th:src="${product.coverUrl}" th:alt="${product.name}"><span th:text="${product.name}">商品</span></td>
+                <td class="product-cell">
+                    <div class="cart-product product-cell-inner">
+                        <img th:src="${product.coverUrl}" th:alt="${product.name}">
+                        <span class="product-name" th:text="${product.name}">商品</span>
+                    </div>
+                </td>
                 <td th:text="${product.categoryName}">分类</td>
                 <td th:text="'¥' + ${product.price}">¥0</td>
                 <td th:text="${product.stock}">0</td>
                 <td th:text="${product.sales}">0</td>
-                <td><span class="badge" th:text="${product.status}">状态</span></td>
-                <td class="actions">
-                    <a class="button ghost" th:href="@{/admin/products/{id}/edit(id=${product.id})}">编辑</a>
-                    <form th:action="@{/admin/products/{id}/delete(id=${product.id})}" method="post" data-confirm="确定删除该商品？如果商品存在订单记录，数据库会拒绝删除。">
-                        <button class="danger" type="submit">删除</button>
-                    </form>
+                <td><span class="badge" th:text="${product.status == 'ON_SALE' ? '在售' : '下架'}">状态</span></td>
+                <td class="product-actions-cell">
+                    <div class="actions product-actions">
+                        <a class="button ghost" th:href="@{/admin/products/{id}/edit(id=${product.id})}">编辑</a>
+                        <form th:action="@{/admin/products/{id}/delete(id=${product.id})}" method="post" data-confirm="确定删除该商品？如果商品存在订单记录，数据库会拒绝删除。">
+                            <button class="danger" type="submit">删除</button>
+                        </form>
+                    </div>
                 </td>
             </tr>
             </tbody>
         </table>
     </section>
 </main>
-<script th:src="@{/js/app.js(v='20260607a')}"></script>
+<div th:replace="~{fragments/layout :: footer}"></div>
+<script th:src="@{/js/app.js(v='20260629c')}"></script>
 </body>
 </html>
+
+
+
+
 
 
 

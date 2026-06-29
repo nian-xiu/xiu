@@ -10,8 +10,10 @@ public class DashboardStats {
     private long paidOrderCount;
     private long shippedOrderCount;
     private long completedOrderCount;
+    private long confirmedReceiptCount;
     private long userCount;
     private BigDecimal revenue = BigDecimal.ZERO;
+    private BigDecimal pendingSettlement = BigDecimal.ZERO;
     private BigDecimal averageOrderAmount = BigDecimal.ZERO;
 
     public long getProductCount() {
@@ -70,6 +72,14 @@ public class DashboardStats {
         this.completedOrderCount = completedOrderCount;
     }
 
+    public long getConfirmedReceiptCount() {
+        return confirmedReceiptCount;
+    }
+
+    public void setConfirmedReceiptCount(long confirmedReceiptCount) {
+        this.confirmedReceiptCount = confirmedReceiptCount;
+    }
+
     public long getUserCount() {
         return userCount;
     }
@@ -84,6 +94,14 @@ public class DashboardStats {
 
     public void setRevenue(BigDecimal revenue) {
         this.revenue = revenue;
+    }
+
+    public BigDecimal getPendingSettlement() {
+        return pendingSettlement;
+    }
+
+    public void setPendingSettlement(BigDecimal pendingSettlement) {
+        this.pendingSettlement = pendingSettlement;
     }
 
     public BigDecimal getAverageOrderAmount() {

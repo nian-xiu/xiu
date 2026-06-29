@@ -14,6 +14,8 @@ import java.util.List;
 
 @Service
 public class CartService {
+    private static final String STATUS_ON_SALE = "ON_SALE";
+
     private final CartMapper cartMapper;
     private final ProductMapper productMapper;
 
@@ -24,11 +26,16 @@ public class CartService {
 
     @Transactional
     public void add(Long userId, Long productId, int quantity) {
-        Product product = productMapper.findById(productId);
-        if (product == null || !"ON_SALE".equals(product.getStatus())) {
-            throw new IllegalArgumentException("商品不存在或已下架");
+        Product product = requireOnSaleProduct(productId);
+        int stock = availableStock(product);
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("商品数量必须大于 0");
         }
-        int safeQuantity = Math.max(1, Math.min(quantity, product.getStock()));
+        if (stock <= 0) {
+            throw new IllegalArgumentException("商品库存不足");
+        }
+
+        int safeQuantity = Math.min(quantity, stock);
         CartItem existing = cartMapper.findByUserAndProduct(userId, productId);
         if (existing == null) {
             CartItem item = new CartItem();
@@ -36,9 +43,10 @@ public class CartService {
             item.setProductId(productId);
             item.setQuantity(safeQuantity);
             cartMapper.insert(item);
-        } else {
-            cartMapper.updateQuantity(existing.getId(), Math.min(product.getStock(), existing.getQuantity() + safeQuantity));
+            return;
         }
+
+        cartMapper.updateQuantity(existing.getId(), Math.min(stock, existing.getQuantity() + safeQuantity));
     }
 
     public CartSummary summary(Long userId) {
@@ -49,7 +57,7 @@ public class CartService {
             if (product == null) {
                 continue;
             }
-            int quantity = Math.min(item.getQuantity(), product.getStock());
+            int quantity = Math.min(item.getQuantity(), availableStock(product));
             BigDecimal subtotal = product.getPrice().multiply(BigDecimal.valueOf(quantity));
             CartLine line = new CartLine();
             line.setCartItemId(item.getId());
@@ -71,15 +79,31 @@ public class CartService {
         if (item == null) {
             return;
         }
-        Product product = productMapper.findById(item.getProductId());
-        int safeQuantity = Math.max(1, quantity);
-        if (product != null) {
-            safeQuantity = Math.min(safeQuantity, product.getStock());
+
+        Product product = requireOnSaleProduct(item.getProductId());
+        int stock = availableStock(product);
+        if (stock <= 0) {
+            throw new IllegalArgumentException("商品库存不足");
         }
-        cartMapper.updateQuantity(cartItemId, Math.max(1, safeQuantity));
+
+        int safeQuantity = Math.max(1, quantity);
+        cartMapper.updateQuantity(cartItemId, Math.min(safeQuantity, stock));
     }
 
     public void remove(Long cartItemId, Long userId) {
         cartMapper.deleteByIdAndUserId(cartItemId, userId);
+    }
+
+    private Product requireOnSaleProduct(Long productId) {
+        Product product = productMapper.findById(productId);
+        if (product == null || !STATUS_ON_SALE.equals(product.getStatus())) {
+            throw new IllegalArgumentException("商品不存在或已下架");
+        }
+        return product;
+    }
+
+    private int availableStock(Product product) {
+        Integer stock = product.getStock();
+        return stock == null ? 0 : stock;
     }
 }

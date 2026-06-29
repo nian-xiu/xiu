@@ -41,6 +41,40 @@
         });
     });
 
+    document.querySelectorAll(".admin-products-table .product-name").forEach((name) => {
+        const text = name.textContent?.trim();
+        if (!text || name.dataset.formatted === "true") {
+            return;
+        }
+        name.dataset.formatted = "true";
+        const parts = text
+            .replace(/\s+Pro\s+/g, " Pro\u200b ")
+            .replace(/\s+(游戏|轻薄|新款|礼盒|套装|蓝牙)/g, "\u200b $1")
+            .replace(/\u200b\s*\u200b/g, "\u200b")
+            .split("\u200b");
+        name.replaceChildren();
+        parts.forEach((part, index) => {
+            if (index > 0) {
+                name.append(document.createElement("wbr"));
+            }
+            name.append(document.createTextNode(part));
+        });
+    });
+
+    document.querySelectorAll("[data-max-lines]").forEach((field) => {
+        const maxLines = Number(field.dataset.maxLines || 0);
+        if (maxLines <= 0) {
+            return;
+        }
+        field.addEventListener("input", () => {
+            const lines = field.value.split(/\r?\n/);
+            if (lines.length <= maxLines) {
+                return;
+            }
+            field.value = lines.slice(0, maxLines - 1).concat(lines.slice(maxLines - 1).join(" ")).join("\n");
+        });
+    });
+
     document.querySelectorAll("[data-carousel]").forEach((carousel) => {
         const slides = Array.from(carousel.querySelectorAll(".carousel-slide"));
         const dots = Array.from(carousel.querySelectorAll("[data-carousel-dot]"));

@@ -23,9 +23,21 @@ public interface OrderMapper {
 
     BigDecimal sumRevenue();
 
+    BigDecimal sumPendingSettlement();
+
+    long countConfirmedReceipts();
+
     List<Order> findPendingAutoShip();
 
-    int updateStatus(@Param("id") Long id, @Param("status") String status);
+    List<Order> findPendingDeliveryCompletion();
+
+    List<Order> findPendingAutoReceive();
+
+    int updateStatus(@Param("id") Long id, @Param("status") String status, @Param("pickupCode") String pickupCode);
 
     int updateStatusByUserId(@Param("id") Long id, @Param("userId") Long userId, @Param("status") String status);
+
+    int confirmReceiptByUserId(@Param("id") Long id, @Param("userId") Long userId);
+
+    int confirmReceipt(@Param("id") Long id);
 }

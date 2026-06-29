@@ -1824,11 +1824,11 @@ textarea {
 .site-footer {
     border-top: 1px solid var(--line);
     background: #fff;
-    padding: 24px 20px;
-    color: var(--muted);
+    padding: 18px 20px;
+    color: #8b857c;
     display: flex;
     justify-content: center;
-    gap: 30px;
+    gap: 22px;
     flex-wrap: wrap;
 }
 
@@ -2903,6 +2903,10 @@ textarea {
     background: var(--accent);
 }
 
+.stat.accent-amber::before {
+    background: #d99b2b;
+}
+
 .stat small {
     display: block;
     margin-top: 8px;
@@ -2961,6 +2965,183 @@ textarea {
 
 .table tr:hover td {
     background: #fbfdfb;
+}
+
+.admin-products-table {
+    table-layout: fixed;
+    width: 100%;
+    min-width: 0;
+    font-size: 14px;
+}
+
+.admin-products-table th,
+.admin-products-table td {
+    padding: 11px 12px;
+}
+
+.admin-products-table th:nth-child(1),
+.admin-products-table td:nth-child(1) {
+    width: 30%;
+}
+
+.admin-products-table th:nth-child(2),
+.admin-products-table td:nth-child(2) {
+    width: 10%;
+}
+
+.admin-products-table th:nth-child(3),
+.admin-products-table td:nth-child(3) {
+    width: 11%;
+}
+
+.admin-products-table th:nth-child(4),
+.admin-products-table td:nth-child(4),
+.admin-products-table th:nth-child(5),
+.admin-products-table td:nth-child(5) {
+    width: 7%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.admin-products-table th:nth-child(6),
+.admin-products-table td:nth-child(6) {
+    width: 8%;
+}
+
+.admin-products-table th:nth-child(7),
+.admin-products-table td:nth-child(7) {
+    width: 20%;
+}
+
+.admin-products-table td:nth-child(2),
+.admin-products-table td:nth-child(3),
+.admin-products-table td:nth-child(6) {
+    white-space: nowrap;
+}
+
+.admin-products-table .product-cell {
+    display: table-cell;
+}
+
+.admin-products-table .product-cell-inner {
+    justify-content: flex-start;
+    align-items: center;
+    gap: 12px;
+    min-height: 72px;
+}
+
+.admin-products-table .product-cell-inner img {
+    flex: 0 0 72px;
+    width: 72px;
+    height: 56px;
+}
+
+.admin-products-table .product-cell-inner .product-name {
+    min-width: 0;
+    max-width: 210px;
+    display: -webkit-box;
+    overflow: hidden;
+    line-height: 1.32;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow-wrap: anywhere;
+}
+
+.admin-products-table .product-actions-cell {
+    display: table-cell;
+}
+
+.admin-products-table .product-actions {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 8px;
+}
+
+.admin-products-table .product-actions form {
+    margin: 0;
+}
+
+.admin-products-table .product-actions .button,
+.admin-products-table .product-actions button {
+    min-height: 34px;
+    padding: 0 12px;
+}
+
+.order-progress span.is-pending-finish {
+    background: #f7f2e8;
+    border-color: var(--line);
+    color: var(--muted);
+}
+
+.badge-order-state.is-pending {
+    background: #fff4e2;
+    border-color: #f1c878;
+    color: #8a5312;
+}
+
+.badge-order-state.is-received,
+.order-progress span.is-received {
+    background: #e8f6ee;
+    border-color: #88c7a4;
+    color: #14533b;
+}
+
+.order-progress span.is-active:not(.is-pending-finish):not(.is-received) {
+    border-color: rgba(31, 95, 84, 0.4);
+    background: #edf7f3;
+    color: var(--brand-dark);
+}
+
+.order-actions .is-complete {
+    background: #e8f6ee;
+    border: 1px solid #88c7a4;
+    color: #14533b;
+    box-shadow: none;
+    cursor: default;
+}
+
+.compact-textarea {
+    min-height: 0;
+    resize: vertical;
+}
+
+.product-name-editor {
+    min-height: 76px;
+    max-height: 126px;
+    line-height: 1.45;
+}
+
+.pickup-code,
+.pickup-inline {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 26px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: #fff4e2;
+    border: 1px solid #f1c878;
+    color: #8a5312;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.pickup-inline,
+.auto-receive-inline {
+    margin-left: 8px;
+    font-size: 13px;
+}
+
+.site-footer {
+    font-size: 12px;
+    font-weight: 300;
+    line-height: 1.45;
+    letter-spacing: 0;
+}
+
+.site-footer div:first-child {
+    color: #7b746b;
+    font-weight: 400;
 }
 
 .flash {

@@ -8,6 +8,14 @@ $out = Join-Path $projectRoot "app.log"
 $err = Join-Path $projectRoot "app.err.log"
 $url = "http://localhost:8080/"
 
+if ([string]::IsNullOrWhiteSpace($env:DB_USERNAME)) {
+    $env:DB_USERNAME = "root"
+}
+
+if ([string]::IsNullOrWhiteSpace($env:DB_PASSWORD)) {
+    $env:DB_PASSWORD = "123456"
+}
+
 if (!(Test-Path $java)) {
     throw "Java not found: $java"
 }

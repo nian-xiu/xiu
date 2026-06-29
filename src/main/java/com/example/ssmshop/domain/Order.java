@@ -25,6 +25,8 @@ public class Order {
     private LocalDateTime autoShipAt;
     private LocalDateTime shippedAt;
     private LocalDateTime completedAt;
+    private LocalDateTime receiptConfirmedAt;
+    private String pickupCode;
 
     public Long getId() {
         return id;
@@ -199,6 +201,26 @@ public class Order {
         this.completedAt = completedAt;
     }
 
+    public LocalDateTime getReceiptConfirmedAt() {
+        return receiptConfirmedAt;
+    }
+
+    public void setReceiptConfirmedAt(LocalDateTime receiptConfirmedAt) {
+        this.receiptConfirmedAt = receiptConfirmedAt;
+    }
+
+    public String getPickupCode() {
+        return pickupCode;
+    }
+
+    public void setPickupCode(String pickupCode) {
+        this.pickupCode = pickupCode;
+    }
+
+    public boolean isReceiptConfirmed() {
+        return receiptConfirmedAt != null;
+    }
+
     public String getStatusLabel() {
         if ("PAID".equals(status)) {
             return "待发货";
@@ -207,7 +229,7 @@ public class Order {
             return "运输中";
         }
         if ("COMPLETED".equals(status)) {
-            return "已送达";
+            return isReceiptConfirmed() ? "已完成" : "已送达";
         }
         if ("REFUND_REQUESTED".equals(status)) {
             return "退款处理中";
@@ -269,6 +291,9 @@ public class Order {
         if ("CANCELLED".equals(status)) {
             return "订单已取消";
         }
+        if ("COMPLETED".equals(status)) {
+            return isReceiptConfirmed() ? "已确认收货" : "已送达，待确认";
+        }
         if ("PAID".equals(status) && shippedAt == null) {
             long hoursLeft = getAutoShipHoursLeft();
             return hoursLeft <= 0 ? "即将发货" : "预计 " + hoursLeft + " 小时内发货";
@@ -277,11 +302,39 @@ public class Order {
         return remainingDays <= 0 ? "已送达" : "预计 " + remainingDays + " 天后送达";
     }
 
+    public String getPickupCodeText() {
+        if (!"COMPLETED".equals(status) || pickupCode == null || pickupCode.isBlank()) {
+            return "";
+        }
+        return "取件码 " + pickupCode;
+    }
+
+    public long getAutoReceiveHoursLeft() {
+        if (!"COMPLETED".equals(status) || isReceiptConfirmed() || completedAt == null) {
+            return 0L;
+        }
+        long hours = Duration.between(LocalDateTime.now(), completedAt.plusDays(7)).toHours();
+        return Math.max(0L, hours);
+    }
+
+    public String getAutoReceiveText() {
+        if (!"COMPLETED".equals(status) || isReceiptConfirmed()) {
+            return "";
+        }
+        long hoursLeft = getAutoReceiveHoursLeft();
+        if (hoursLeft <= 0) {
+            return "即将自动确认收货";
+        }
+        long days = hoursLeft / 24;
+        long hours = hoursLeft % 24;
+        return days > 0 ? days + " 天 " + hours + " 小时后自动确认" : hours + " 小时后自动确认";
+    }
+
     public boolean isRefundable() {
-        return "PAID".equals(status) || "SHIPPED".equals(status);
+        return "PAID".equals(status) || "SHIPPED".equals(status) || ("COMPLETED".equals(status) && !isReceiptConfirmed());
     }
 
     public boolean isReceivable() {
-        return "SHIPPED".equals(status) && getRemainingDeliveryDays() <= 0;
+        return "COMPLETED".equals(status) && !isReceiptConfirmed();
     }
 }
