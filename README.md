@@ -79,6 +79,18 @@ Windows 下也可以直接使用：
 powershell -ExecutionPolicy Bypass -File tools/run-app.ps1
 ```
 
+## Docker 部署
+
+项目已提供 `Dockerfile`、`compose.yaml` 和 `.env.example`，适合部署到 Linux 云服务器：
+
+```bash
+cp .env.example .env
+# 修改 .env 中的 MYSQL_ROOT_PASSWORD、APP_PASSWORD_SALT
+docker compose up -d --build
+```
+
+阿里云 ECS 详细步骤见：[docs/aliyun-ecs-deploy.md](docs/aliyun-ecs-deploy.md)。
+
 ## 访问地址
 
 - 商城首页：http://localhost:8080/

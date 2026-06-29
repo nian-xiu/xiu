@@ -1,0 +1,7 @@
+.git
+.idea
+target
+tmp
+*.log
+*.iml
+Non-project-file
