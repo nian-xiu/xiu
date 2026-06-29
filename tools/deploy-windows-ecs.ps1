@@ -5,7 +5,9 @@ param(
     [string]$DbUsername = "root",
     [string]$DbPassword = "123456",
     [string]$AppPasswordSalt = "ssm-shop-prod-salt-change-later",
-    [int]$Port = 8080
+    [int]$Port = 8080,
+    [switch]$ResetMySqlData,
+    [string]$PublicIp = "8.163.123.191"
 )
 
 $ErrorActionPreference = "Stop"
@@ -151,6 +153,26 @@ function Test-PortListening([int]$LocalPort) {
     return [bool](Get-NetTCPConnection -LocalPort $LocalPort -State Listen -ErrorAction SilentlyContinue)
 }
 
+function Stop-MySqlFallbackProcess([string]$MysqlHome) {
+    Unregister-ScheduledTask -TaskName "SsmShopMySQLProcess" -Confirm:$false -ErrorAction SilentlyContinue
+    Get-CimInstance Win32_Process -Filter "name = 'mysqld.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.ExecutablePath -and $_.ExecutablePath.StartsWith($MysqlHome, [System.StringComparison]::OrdinalIgnoreCase) } |
+        ForEach-Object {
+            Write-Host "Stopping MySQL process $($_.ProcessId)"
+            Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+        }
+    Start-Sleep -Seconds 2
+}
+
+function Test-MySqlLogin([string]$MysqlAdminPath, [string]$Password) {
+    if ([string]::IsNullOrEmpty($Password)) {
+        & $MysqlAdminPath -u root ping 2>$null | Out-Null
+    } else {
+        & $MysqlAdminPath -u root "-p$Password" ping 2>$null | Out-Null
+    }
+    return ($LASTEXITCODE -eq 0)
+}
+
 function Start-MySqlFallbackProcess([string]$MysqldPath, [string]$DefaultsFile, [string]$LogDir, [int]$MySqlPort) {
     if (Test-PortListening $MySqlPort) {
         Write-Host "MySQL port $MySqlPort is already listening."
@@ -279,6 +301,13 @@ $mysql = Join-Path $mysqlBin "mysql.exe"
 $mysqlAdmin = Join-Path $mysqlBin "mysqladmin.exe"
 $mysqlIni = Join-Path $InstallRoot "mysql.ini"
 
+if ($ResetMySqlData) {
+    Write-Step "Resetting MySQL data directory"
+    Remove-MySqlServiceIfExists $mysqlService $mysqld
+    Stop-MySqlFallbackProcess $mysqlHome
+    Remove-TreeInsideInstallRoot $mysqlDataDir
+}
+
 if (-not (Test-Path $mysqlIni)) {
     @"
 [mysqld]
@@ -309,19 +338,16 @@ if (-not (Test-MySqlDataDirectory $mysqlDataDir)) {
 Remove-MySqlServiceIfExists $mysqlService $mysqld
 Start-MySqlFallbackProcess $mysqld $mysqlIni $logsDir 3306
 
-$rootPasswordWorks = $false
-try {
-    & $mysqlAdmin -u root "-p$DbPassword" ping 2>$null | Out-Null
-    $rootPasswordWorks = $true
-} catch {
-    $rootPasswordWorks = $false
-}
+$rootPasswordWorks = Test-MySqlLogin $mysqlAdmin $DbPassword
 
 if (-not $rootPasswordWorks) {
-    try {
+    if (Test-MySqlLogin $mysqlAdmin "") {
         Invoke-NativeChecked $mysqlAdmin @("-u", "root", "password", $DbPassword) "Could not set MySQL root password automatically."
-    } catch {
-        Write-Warning "Could not set MySQL root password automatically. If MySQL was previously initialized, make sure the supplied password is correct."
+        $rootPasswordWorks = Test-MySqlLogin $mysqlAdmin $DbPassword
+    }
+
+    if (-not $rootPasswordWorks) {
+        throw "MySQL root password does not match the supplied password. Re-run with -ResetMySqlData on a fresh deployment, or provide the existing root password."
     }
 }
 
@@ -422,7 +448,7 @@ if (-not $ok) {
 Write-Host ""
 Write-Host "Deployment completed." -ForegroundColor Green
 Write-Host "Local URL:  http://localhost:$Port/"
-Write-Host "Public URL: http://8.163.123.191:$Port/"
+Write-Host "Public URL: http://${PublicIp}:$Port/"
 Write-Host "Logs:       $logsDir\ssm-shop.log"
 Write-Host "Status:     powershell -ExecutionPolicy Bypass -File `"$statusScript`""
 Write-Host "Stop:       powershell -ExecutionPolicy Bypass -File `"$stopScript`""
