@@ -23,7 +23,9 @@ import java.sql.Statement;
 @Component
 public class DataSeeder {
     private static final Logger LOG = LoggerFactory.getLogger(DataSeeder.class);
-    private static final String MIGRATION_VERSION = "20260629-fulfillment-b";
+    private static final String MIGRATION_VERSION = "20260630-demo-passwords";
+    private static final String ADMIN_BCRYPT_HASH = "$2a$10$CRrSlxKb2p2Jr0lu.LXCPObIQq8/4tL6yzGS3KequRiWFb2hHsnGm";
+    private static final String CUSTOMER_BCRYPT_HASH = "$2a$10$V35kllF2j65b4LTYFFF/hedlZKB40wWH75p7kCUZ6V.r2Zqn.z74O";
 
     private final DataSource dataSource;
 
@@ -83,6 +85,7 @@ public class DataSeeder {
      * the migration is logged and skipped so a fresh DB still starts cleanly.
      */
     private void runMigrations(Connection connection) {
+        ensureDemoUsers(connection);
         runSilently(connection, "ALTER TABLE user_coupons MODIFY COLUMN discount_rate DECIMAL(4,2) NULL");
         runSilently(connection, "ALTER TABLE activity_campaigns ADD COLUMN flash_sale BOOLEAN NOT NULL DEFAULT FALSE");
         runSilently(connection, "ALTER TABLE user_coupons ADD COLUMN coupon_name VARCHAR(120)");
@@ -108,6 +111,40 @@ public class DataSeeder {
         runSilently(connection, "CREATE INDEX idx_products_status_stock ON products (status, stock)");
         runSilently(connection, "CREATE INDEX idx_products_created_at ON products (created_at)");
         runSilently(connection, "CREATE INDEX idx_orders_status_created_at ON orders (status, created_at)");
+    }
+
+    private void ensureDemoUsers(Connection connection) {
+        upsertDemoUser(connection, "admin", ADMIN_BCRYPT_HASH, "商城管理员", "13800000000",
+                "admin@ssmshop.local", "ADMIN");
+        upsertDemoUser(connection, "customer", CUSTOMER_BCRYPT_HASH, "演示用户", "13900000000",
+                "customer@ssmshop.local", "CUSTOMER");
+    }
+
+    private void upsertDemoUser(Connection connection, String username, String passwordHash, String nickname,
+                                String phone, String email, String role) {
+        String sql = """
+                INSERT INTO users (username, password_hash, nickname, phone, email, role, status)
+                VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE')
+                ON DUPLICATE KEY UPDATE
+                    password_hash = VALUES(password_hash),
+                    nickname = VALUES(nickname),
+                    phone = VALUES(phone),
+                    email = VALUES(email),
+                    role = VALUES(role),
+                    status = VALUES(status)
+                """;
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, username);
+            statement.setString(2, passwordHash);
+            statement.setString(3, nickname);
+            statement.setString(4, phone);
+            statement.setString(5, email);
+            statement.setString(6, role);
+            statement.executeUpdate();
+            LOG.info("Demo user ensured: {}", username);
+        } catch (SQLException ex) {
+            LOG.warn("Could not ensure demo user {}: {}", username, ex.getMessage());
+        }
     }
 
     private void runSilently(Connection connection, String sql) {
