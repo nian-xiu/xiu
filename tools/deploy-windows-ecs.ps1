@@ -170,14 +170,18 @@ function Stop-MySqlFallbackProcess([string]$MysqlHome) {
     Start-Sleep -Seconds 2
 }
 
-function Test-MySqlLogin([string]$MysqlAdminPath, [string]$Password) {
+function ConvertTo-MySqlQuotedString([string]$Value) {
+    return "'" + (($Value -replace "\\", "\\") -replace "'", "''") + "'"
+}
+
+function Test-MySqlLogin([string]$MysqlPath, [string]$Password) {
     $previousErrorActionPreference = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     try {
         if ([string]::IsNullOrEmpty($Password)) {
-            & $MysqlAdminPath -u root ping 2>$null | Out-Null
+            & $MysqlPath -u root --connect-expired-password -N -B -e "SELECT 1" 2>$null | Out-Null
         } else {
-            & $MysqlAdminPath -u root "-p$Password" ping 2>$null | Out-Null
+            & $MysqlPath -u root "-p$Password" --connect-expired-password -N -B -e "SELECT 1" 2>$null | Out-Null
         }
         $exitCode = $LASTEXITCODE
     } finally {
@@ -366,12 +370,14 @@ if (-not (Test-MySqlDataDirectory $mysqlDataDir)) {
 Remove-MySqlServiceIfExists $mysqlService $mysqld
 Start-MySqlFallbackProcess $mysqld $mysqlIni $logsDir 3306
 
-$rootPasswordWorks = Test-MySqlLogin $mysqlAdmin $DbPassword
+$rootPasswordWorks = Test-MySqlLogin $mysql $DbPassword
 
 if (-not $rootPasswordWorks) {
-    if (Test-MySqlLogin $mysqlAdmin "") {
-        Invoke-NativeChecked $mysqlAdmin @("-u", "root", "password", $DbPassword) "Could not set MySQL root password automatically."
-        $rootPasswordWorks = Test-MySqlLogin $mysqlAdmin $DbPassword
+    if (Test-MySqlLogin $mysql "") {
+        $quotedPassword = ConvertTo-MySqlQuotedString $DbPassword
+        $setPasswordSql = "ALTER USER 'root'@'localhost' IDENTIFIED BY $quotedPassword; FLUSH PRIVILEGES;"
+        Invoke-NativeChecked $mysql @("-u", "root", "--connect-expired-password", "-e", $setPasswordSql) "Could not set MySQL root password automatically."
+        $rootPasswordWorks = Test-MySqlLogin $mysql $DbPassword
     }
 
     if (-not $rootPasswordWorks) {
