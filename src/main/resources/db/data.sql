@@ -3,8 +3,8 @@
 
 INSERT INTO users (id, username, password_hash, nickname, phone, email, role, status)
 VALUES
-    (1, 'admin', 'ba3a45a4f60fa8892b3eb8c75ce3a1d776e8e42d67abd08d5d29b2388e7e8a82', '商城管理员', '13800000000', 'admin@ssmshop.local', 'ADMIN', 'ACTIVE'),
-    (2, 'customer', '11a82f643db1a49afc1e21b2be6c0797e596ced63ff8f04af9b977e20c97c417', '演示用户', '13900000000', 'customer@ssmshop.local', 'CUSTOMER', 'ACTIVE')
+    (1, 'admin', '$2a$10$CRrSlxKb2p2Jr0lu.LXCPObIQq8/4tL6yzGS3KequRiWFb2hHsnGm', '商城管理员', '13800000000', 'admin@ssmshop.local', 'ADMIN', 'ACTIVE'),
+    (2, 'customer', '$2a$10$V35kllF2j65b4LTYFFF/hedlZKB40wWH75p7kCUZ6V.r2Zqn.z74O', '演示用户', '13900000000', 'customer@ssmshop.local', 'CUSTOMER', 'ACTIVE')
 ON DUPLICATE KEY UPDATE nickname = VALUES(nickname);
 
 INSERT INTO categories (id, name, description, sort_order, enabled)
