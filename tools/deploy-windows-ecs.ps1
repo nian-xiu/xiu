@@ -186,6 +186,20 @@ function Test-MySqlLogin([string]$MysqlAdminPath, [string]$Password) {
     return ($exitCode -eq 0)
 }
 
+function Stop-AppIfRunning([int]$LocalPort) {
+    $task = Get-ScheduledTask -TaskName "SsmShopApp" -ErrorAction SilentlyContinue
+    if ($task) {
+        Stop-ScheduledTask -TaskName "SsmShopApp" -ErrorAction SilentlyContinue
+    }
+    Get-NetTCPConnection -LocalPort $LocalPort -ErrorAction SilentlyContinue |
+        Where-Object { $_.State -eq "Listen" } |
+        ForEach-Object {
+            Write-Host "Stopping app process $($_.OwningProcess) on port $LocalPort"
+            Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue
+        }
+    Start-Sleep -Seconds 2
+}
+
 function Start-MySqlFallbackProcess([string]$MysqldPath, [string]$DefaultsFile, [string]$LogDir, [int]$MySqlPort) {
     if (Test-PortListening $MySqlPort) {
         Write-Host "MySQL port $MySqlPort is already listening."
@@ -316,6 +330,7 @@ $mysqlIni = Join-Path $InstallRoot "mysql.ini"
 
 if ($ResetMySqlData) {
     Write-Step "Resetting MySQL data directory"
+    Stop-AppIfRunning $Port
     Remove-MySqlServiceIfExists $mysqlService $mysqld
     Stop-MySqlFallbackProcess $mysqlHome
     Remove-TreeInsideInstallRoot $mysqlDataDir
