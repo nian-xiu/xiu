@@ -94,8 +94,14 @@ function Expand-ZipFresh([string]$ZipFile, [string]$Destination) {
 
 function Invoke-NativeChecked([string]$FilePath, [string[]]$Arguments, [string]$FailureMessage) {
     Write-Host "$FilePath $($Arguments -join ' ')"
-    & $FilePath @Arguments
-    $exitCode = $LASTEXITCODE
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & $FilePath @Arguments
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
     if ($exitCode -ne 0) {
         throw "$FailureMessage Exit code: $exitCode"
     }
@@ -165,12 +171,19 @@ function Stop-MySqlFallbackProcess([string]$MysqlHome) {
 }
 
 function Test-MySqlLogin([string]$MysqlAdminPath, [string]$Password) {
-    if ([string]::IsNullOrEmpty($Password)) {
-        & $MysqlAdminPath -u root ping 2>$null | Out-Null
-    } else {
-        & $MysqlAdminPath -u root "-p$Password" ping 2>$null | Out-Null
+    $previousErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        if ([string]::IsNullOrEmpty($Password)) {
+            & $MysqlAdminPath -u root ping 2>$null | Out-Null
+        } else {
+            & $MysqlAdminPath -u root "-p$Password" ping 2>$null | Out-Null
+        }
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
     }
-    return ($LASTEXITCODE -eq 0)
+    return ($exitCode -eq 0)
 }
 
 function Start-MySqlFallbackProcess([string]$MysqldPath, [string]$DefaultsFile, [string]$LogDir, [int]$MySqlPort) {
